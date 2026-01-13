@@ -19,7 +19,7 @@ public class ClubInfoEvent(IOptions<ClubInfoEventOptions> options, BotState botS
             new DiscordSeparatorComponent(divider: true),
             new DiscordTextDisplayComponent("Below are some nifty links for everyone"),
             new DiscordActionRowComponent([
-                new DiscordLinkButtonComponent("https://www.notion.so/trickfire/invite/d3549ba6387d94a9454679a4082d848706d1dd29", "Notion"),
+                new DiscordLinkButtonComponent("https://www.notion.so/trickfire/invite/7f153eec8ed8ebe4608dc95892fce859540f8640", "Notion"),
                 new DiscordLinkButtonComponent("https://schej.it/e/7aDA2", "Schej"),
                 new DiscordLinkButtonComponent("https://www.notion.so/trickfire/1301fd41ff5b81059fc6e6461d7bb25b?v=1301fd41ff5b813487ee000c80faa461", "Calendar")
             ]),
