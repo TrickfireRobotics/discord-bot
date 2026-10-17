@@ -1,0 +1,11 @@
+{
+    "$schema": "https://docs.trickfirerobotics.com/docs.config.schema.json",
+    "name": "discord-bot",
+    "description": "TrickFire's Discord bot — attendance tracking, role sync, and Notion integration.",
+    "sidebar": [
+        { "label": "Getting Started", "slug": "getting-started" },
+        { "label": "Configuration", "slug": "configuration" },
+        { "label": "Deployment", "slug": "deployment" },
+        { "label": "Architecture", "slug": "architecture" }
+    ]
+}

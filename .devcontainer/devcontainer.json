@@ -1,0 +1,15 @@
+{
+    "name": "discord-bot",
+    "image": "mcr.microsoft.com/devcontainers/dotnet:9.0",
+    "forwardPorts": [8080],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-dotnettools.csdevkit",
+                "ms-dotnettools.csharp",
+                "csharpier.csharpier-vscode"
+            ]
+        }
+    },
+    "postCreateCommand": "dotnet tool restore && dotnet restore DiscordBot.sln"
+}

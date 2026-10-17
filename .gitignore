@@ -402,3 +402,5 @@ FodyWeavers.xsd
 # Discord token secrets file, even though it should never be outside the build
 # directory
 **/secrets.txt
+# trickfire-docs
+dist/
