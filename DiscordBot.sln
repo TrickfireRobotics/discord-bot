@@ -7,8 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		Dockerfile = Dockerfile
-		fly.toml = fly.toml
-		.github\workflows\flyio.yml = .github\workflows\flyio.yml
+		docker-compose.yml = docker-compose.yml
+		.github\workflows\deploy.yml = .github\workflows\deploy.yml
 		LICENSE.md = LICENSE.md
 		README.md = README.md
 	EndProjectSection

@@ -1,0 +1,8 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    mem_limit: 512m
+    volumes:
+      - /opt/discord-bot/data:/data
+      - /opt/discord-bot/secrets.txt:/DiscordBot/secrets.txt:ro

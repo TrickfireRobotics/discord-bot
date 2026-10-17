@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Build
+        run: dotnet build DiscordBot.sln
+
+      - name: Check formatting
+        run: |
+          dotnet tool restore
+          dotnet csharpier check .
+
+  deploy:
+    needs: format-check
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write secrets
+        run: |
+          mkdir -p /opt/discord-bot/data
+          printf '%s\n%s\n' "${{ secrets.BOT_TOKEN }}" "${{ secrets.NOTION_SECRET }}" > /opt/discord-bot/secrets.txt
+          chmod 600 /opt/discord-bot/secrets.txt
+
+      - name: Build and restart
+        run: docker compose up -d --build
