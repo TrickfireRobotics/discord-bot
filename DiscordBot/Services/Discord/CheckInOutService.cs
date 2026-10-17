@@ -1,26 +1,28 @@
-﻿using DSharpPlus;
+﻿using System.Text;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Text;
 
-namespace TrickFireDiscordBot.Services.Discord;
+namespace DiscordBot.Services.Discord;
 
-public class CheckInOutService 
-    : BackgroundService, IAutoRegisteredService, IEventHandler<ComponentInteractionCreatedEventArgs>
+public class CheckInOutService
+    : BackgroundService,
+        IAutoRegisteredService,
+        IEventHandler<ComponentInteractionCreatedEventArgs>
 {
     private const string SadCatASCII =
-        "　　　　   ／＞----フ\r\n" +
-        "　　　　 　|　\\_  \\_ l\r\n" +
-        "　 　　　／` ミ＿xノ　\r\n" +
-        "　　　　/　　　　 |\r\n" +
-        "　　　 /　ヽ　   ﾉ\r\n" +
-        "　　　│　　|　|　|\r\n" +
-        "　／￣|　　 |　|　|\r\n" +
-        "　| (￣ヽ＿\\_ヽ\\_)\\_\\_)\r\n" +
-        "　＼二つ";
+        "　　　　   ／＞----フ\r\n"
+        + "　　　　 　|　\\_  \\_ l\r\n"
+        + "　 　　　／` ミ＿xノ　\r\n"
+        + "　　　　/　　　　 |\r\n"
+        + "　　　 /　ヽ　   ﾉ\r\n"
+        + "　　　│　　|　|　|\r\n"
+        + "　／￣|　　 |　|　|\r\n"
+        + "　| (￣ヽ＿\\_ヽ\\_)\\_\\_)\r\n"
+        + "　＼二つ";
     private const string InteractionId = "CheckInOutButton";
 
     private static readonly Random random = new();
@@ -89,7 +91,11 @@ public class CheckInOutService
                 }
 
                 // Update embed to reflect number of members checked in
-                if (_needToUpdateEmbed || lastCheckInChannel != BotState.CheckInChannelId || BotState.ListMessageId == 0)
+                if (
+                    _needToUpdateEmbed
+                    || lastCheckInChannel != BotState.CheckInChannelId
+                    || BotState.ListMessageId == 0
+                )
                 {
                     await UpdateListMessage();
                     lastCheckInChannel = BotState.CheckInChannelId;
@@ -97,14 +103,15 @@ public class CheckInOutService
                     // Update status to reflect number of members checked in
                     if (_needToUpdateEmbed)
                     {
-                        await Discord.Client.UpdateStatusAsync(new DiscordActivity(
-                            $" {BotState.Members.Count} member{(BotState.Members.Count == 1 ? "" : "s")} in the shop!",
-                            DiscordActivityType.Watching
-                        ));
+                        await Discord.Client.UpdateStatusAsync(
+                            new DiscordActivity(
+                                $" {BotState.Members.Count} member{(BotState.Members.Count == 1 ? "" : "s")} in the shop!",
+                                DiscordActivityType.Watching
+                            )
+                        );
                         _needToUpdateEmbed = false;
                     }
                 }
-
             }
             catch (Exception ex)
             {
@@ -147,7 +154,6 @@ public class CheckInOutService
             BotState.ListMessageId = (await channel.SendMessageAsync(builder)).Id;
             BotState.Save();
         }
-
     }
 
     /// <summary>
@@ -164,8 +170,8 @@ public class CheckInOutService
             .WithColor(new DiscordColor("19a24a"));
 
         StringBuilder sb = new(
-            "A list of members currently in the shop (INV-011), kept up to date.\n" +
-            "Check in or out using the button or `/checkinout` command!\n\n"
+            "A list of members currently in the shop (INV-011), kept up to date.\n"
+                + "Check in or out using the button or `/checkinout` command!\n\n"
         );
 
         // Add members to description string
@@ -173,7 +179,9 @@ public class CheckInOutService
         {
             (DiscordMember member, DateTimeOffset time) = BotState.Members[i];
 
-            sb.AppendLine($"{member.Mention} ({Formatter.Timestamp(time, TimestampFormat.ShortTime)})");
+            sb.AppendLine(
+                $"{member.Mention} ({Formatter.Timestamp(time, TimestampFormat.ShortTime)})"
+            );
         }
 
         // Sad no members message :(
@@ -186,11 +194,13 @@ public class CheckInOutService
         embed.WithDescription(sb.ToString());
 
         return new DiscordMessageBuilder()
-            .AddActionRowComponent(new DiscordButtonComponent(
-                DiscordButtonStyle.Success,
-                InteractionId,
-                "Check In or Out"
-            ))
+            .AddActionRowComponent(
+                new DiscordButtonComponent(
+                    DiscordButtonStyle.Success,
+                    InteractionId,
+                    "Check In or Out"
+                )
+            )
             .AddEmbed(embed.Build());
     }
 
@@ -207,8 +217,7 @@ public class CheckInOutService
     /// <inheritdoc/>
     public static void Register(IHostApplicationBuilder builder)
     {
-        builder.Services
-            .AddInjectableHostedService<CheckInOutService>();
+        builder.Services.AddInjectableHostedService<CheckInOutService>();
     }
 
     internal async Task CheckInOutInternal(DiscordInteraction interaction)
@@ -259,28 +268,28 @@ public class CheckInOutService
     /// Returns a random checkin message.
     /// </summary>
     /// <returns>a random checkin message</returns>
-    private static string GetCheckInMessage()
-        => random.Next(100) switch
+    private static string GetCheckInMessage() =>
+        random.Next(100) switch
         {
             < 5 => "Make sure to duck when near the arm!",
             >= 5 and < 15 => "Safety is definitely NOT a suggestion (>ᴗ<)!",
             >= 15 and < 25 => "Do NOT break a leg (there will be too much paperwork)",
             >= 25 and < 35 => "Remember to pray to the old rover when you walk past it!",
             >= 35 and < 40 => "Good luck! (you'll need it)",
-            _ => "Welcome to the shop!"
+            _ => "Welcome to the shop!",
         };
 
     /// <summary>
     /// Returns a random checkout message.
     /// </summary>
     /// <returns>a random checkout message.</returns>
-    private static string GetCheckOutMessage()
-        => random.Next(100) switch
+    private static string GetCheckOutMessage() =>
+        random.Next(100) switch
         {
             < 5 => "Trickfire is not responsible for any lost or damaged limbs /j",
             >= 5 and < 15 => "You will be paid in exposure soon!",
             >= 15 and < 35 => "Hope you had lots of fun!",
             >= 35 and < 40 => "do i have to sound excited all the time?",
-            _ => "Thanks for all the good work!"
+            _ => "Thanks for all the good work!",
         };
 }

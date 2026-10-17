@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
-namespace TrickFireDiscordBot;
+namespace DiscordBot;
 
 public class LoggerFormatter : ConsoleFormatter, IDisposable
 {
@@ -11,13 +11,18 @@ public class LoggerFormatter : ConsoleFormatter, IDisposable
     private readonly IDisposable? _optionsReloadToken;
     private ConsoleFormatterOptions _options;
 
-    public LoggerFormatter(IOptionsMonitor<ConsoleFormatterOptions> options) : base("logger")
+    public LoggerFormatter(IOptionsMonitor<ConsoleFormatterOptions> options)
+        : base("logger")
     {
         _options = options.CurrentValue;
         _optionsReloadToken = options.OnChange(options => _options = options);
     }
 
-    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider? scopeProvider, TextWriter textWriter)
+    public override void Write<TState>(
+        in LogEntry<TState> logEntry,
+        IExternalScopeProvider? scopeProvider,
+        TextWriter textWriter
+    )
     {
         lock (_lock)
         {
@@ -26,26 +31,34 @@ public class LoggerFormatter : ConsoleFormatter, IDisposable
                 textWriter.Write(GetForegroundColorEscapeCode(ConsoleColor.Gray));
             }
 
-            DateTimeOffset dto = _options.UseUtcTimestamp ? DateTimeOffset.UtcNow : DateTimeOffset.Now;
+            DateTimeOffset dto = _options.UseUtcTimestamp
+                ? DateTimeOffset.UtcNow
+                : DateTimeOffset.Now;
             textWriter.Write($"[{dto.ToString(_options.TimestampFormat)}] ");
             if (_options.IncludeScopes)
             {
                 textWriter.Write($"[{logEntry.Category}] ");
             }
 
-            textWriter.Write(GetForegroundColorEscapeCode(logEntry.LogLevel switch
-            {
-                LogLevel.Trace => ConsoleColor.Gray,
-                LogLevel.Debug => ConsoleColor.Green,
-                LogLevel.Information => ConsoleColor.Magenta,
-                LogLevel.Warning => ConsoleColor.Yellow,
-                LogLevel.Error => ConsoleColor.Red,
-                LogLevel.Critical => ConsoleColor.DarkRed,
-                _ => throw new ArgumentException("Invalid log level specified.", nameof(logEntry))
-            }));
+            textWriter.Write(
+                GetForegroundColorEscapeCode(
+                    logEntry.LogLevel switch
+                    {
+                        LogLevel.Trace => ConsoleColor.Gray,
+                        LogLevel.Debug => ConsoleColor.Green,
+                        LogLevel.Information => ConsoleColor.Magenta,
+                        LogLevel.Warning => ConsoleColor.Yellow,
+                        LogLevel.Error => ConsoleColor.Red,
+                        LogLevel.Critical => ConsoleColor.DarkRed,
+                        _ => throw new ArgumentException(
+                            "Invalid log level specified.",
+                            nameof(logEntry)
+                        ),
+                    }
+                )
+            );
 
-            textWriter.Write
-            (
+            textWriter.Write(
                 logEntry.LogLevel switch
                 {
                     LogLevel.Trace => "[Trace] ",
@@ -54,7 +67,7 @@ public class LoggerFormatter : ConsoleFormatter, IDisposable
                     LogLevel.Warning => "[Warn]  ",
                     LogLevel.Error => "[Error] ",
                     LogLevel.Critical => "[Crit]  ",
-                    _ => "This code path is unreachable."
+                    _ => "This code path is unreachable.",
                 }
             );
 
@@ -63,7 +76,9 @@ public class LoggerFormatter : ConsoleFormatter, IDisposable
 
             if (logEntry.Exception != null)
             {
-                textWriter.WriteLine($"{logEntry.Exception} : {logEntry.Exception.Message}\n{logEntry.Exception.StackTrace}");
+                textWriter.WriteLine(
+                    $"{logEntry.Exception} : {logEntry.Exception.Message}\n{logEntry.Exception.StackTrace}"
+                );
             }
         }
     }
@@ -93,6 +108,6 @@ public class LoggerFormatter : ConsoleFormatter, IDisposable
             ConsoleColor.Magenta => "\x1B[1m\x1B[35m",
             ConsoleColor.Cyan => "\x1B[1m\x1B[36m",
             ConsoleColor.White => "\x1B[1m\x1B[37m",
-            _ => "\x1B[1m\x1B[37m"
+            _ => "\x1B[1m\x1B[37m",
         };
 }

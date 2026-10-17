@@ -4,10 +4,10 @@
 //using Microsoft.Extensions.Options;
 //using Notion.Client;
 //using System.Text.RegularExpressions;
-//using TrickFireDiscordBot.Services.Discord;
-//using TrickFireDiscordBot.Services.Notion;
+//using DiscordBot.Services.Discord;
+//using DiscordBot.Services.Notion;
 
-//namespace TrickFireDiscordBot.Services;
+//namespace DiscordBot.Services;
 
 //public class TaskSyncer(
 //    ILogger<RoleSyncer> logger,
@@ -433,4 +433,3 @@
 //        public string Url { get; } = notionPage.Url;
 //    }
 //}
-

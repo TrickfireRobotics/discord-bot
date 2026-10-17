@@ -1,13 +1,13 @@
-﻿using DSharpPlus;
+﻿using System.Reflection;
+using DiscordBot.Services;
+using DSharpPlus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using System.Reflection;
-using TrickFireDiscordBot.Services;
 
-namespace TrickFireDiscordBot;
+namespace DiscordBot;
 
 internal class Program
 {
@@ -23,11 +23,13 @@ internal class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine("Startup error. The bot is likely not in a working state: " + e.ToString());
+            Console.WriteLine(
+                "Startup error. The bot is likely not in a working state: " + e.ToString()
+            );
             await Task.Delay(-1);
             return;
         }
-        
+
         ILogger logger = host.Services.GetRequiredService<ILogger<Program>>();
 
         try
@@ -80,19 +82,25 @@ internal class Program
         foreach (Type type in asm.GetTypes())
         {
             // Filter to those that implement auto registered service
-            if (!typeof(IAutoRegisteredService).IsAssignableFrom(type) || type == typeof(IAutoRegisteredService))
+            if (
+                !typeof(IAutoRegisteredService).IsAssignableFrom(type)
+                || type == typeof(IAutoRegisteredService)
+            )
             {
                 continue;
             }
 
             // Register type
-            MethodInfo registerMethod = type.GetMethod(nameof(IAutoRegisteredService.Register), [typeof(IHostApplicationBuilder)])!;
+            MethodInfo registerMethod = type.GetMethod(
+                nameof(IAutoRegisteredService.Register),
+                [typeof(IHostApplicationBuilder)]
+            )!;
             registerMethod.Invoke(null, [builder]);
         }
 
         // Setup logging
-        builder.Logging
-            .SetMinimumLevel(LogLevel.Debug)
+        builder
+            .Logging.SetMinimumLevel(LogLevel.Debug)
             .AddConsole(opt =>
             {
                 opt.FormatterName = "logger";

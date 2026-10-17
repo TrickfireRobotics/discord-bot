@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+using System.Reflection;
+using DSharpPlus;
 using DSharpPlus.Commands;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Entities;
@@ -8,11 +9,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Reflection;
 
-namespace TrickFireDiscordBot.Services.Discord;
+namespace DiscordBot.Services.Discord;
 
-public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions> options) : IHostedService, IAutoRegisteredService, IEventHandler<SessionCreatedEventArgs>
+public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions> options)
+    : IHostedService,
+        IAutoRegisteredService,
+        IEventHandler<SessionCreatedEventArgs>
 {
     /// <summary>
     /// The client associated with the bot.
@@ -20,7 +23,8 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
     public DiscordClient Client { get; } = client;
 
     public DiscordServiceOptions Options { get; } = options.Value;
-    public DiscordGuild MainGuild { get; } = client.GetGuildAsync(options.Value.MainGuildId).GetAwaiter().GetResult();
+    public DiscordGuild MainGuild { get; } =
+        client.GetGuildAsync(options.Value.MainGuildId).GetAwaiter().GetResult();
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -42,22 +46,29 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
     /// <inheritdoc/>
     public static void Register(IHostApplicationBuilder builder)
     {
-        builder.Services
-            .AddDiscordClient(builder.Configuration["BOT_TOKEN"]!, DiscordIntents.GuildMembers | DiscordIntents.Guilds)
+        builder
+            .Services.AddDiscordClient(
+                builder.Configuration["BOT_TOKEN"]!,
+                DiscordIntents.GuildMembers | DiscordIntents.Guilds
+            )
             .Configure<DiscordConfiguration>(builder.Configuration.GetSection("DiscordBotConfig"))
-            .AddCommandsExtension((_, extension) =>
-            {
-                // Configure to slash commands
-                extension.AddProcessor(new SlashCommandProcessor());
+            .AddCommandsExtension(
+                (_, extension) =>
+                {
+                    // Configure to slash commands
+                    extension.AddProcessor(new SlashCommandProcessor());
 
-                // Add our commands from our code (anything with the command
-                // decorator)
-                extension.AddCommands(Assembly.GetExecutingAssembly());
-            })
+                    // Add our commands from our code (anything with the command
+                    // decorator)
+                    extension.AddCommands(Assembly.GetExecutingAssembly());
+                }
+            )
             .ConfigureEventHandlers(events =>
             {
                 Type[] types = Assembly.GetExecutingAssembly().GetTypes();
-                List<Type> eventHandlers = types.Where(t => t.IsAssignableTo(typeof(IEventHandler))).ToList();
+                List<Type> eventHandlers = types
+                    .Where(t => t.IsAssignableTo(typeof(IEventHandler)))
+                    .ToList();
                 events.AddEventHandlers(eventHandlers);
             })
             .AddInjectableHostedService<DiscordService>()
@@ -71,8 +82,13 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
         (Client.Guilds as IDictionary<ulong, DiscordGuild>)![MainGuild.Id] = MainGuild;
 
         // Make sure CurrentMember is not null
-        FieldInfo memberField = typeof(DiscordGuild).GetField("members", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        IDictionary<ulong, DiscordMember> members = (memberField.GetValue(MainGuild) as IDictionary<ulong, DiscordMember>)!;
+        FieldInfo memberField = typeof(DiscordGuild).GetField(
+            "members",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        )!;
+        IDictionary<ulong, DiscordMember> members = (
+            memberField.GetValue(MainGuild) as IDictionary<ulong, DiscordMember>
+        )!;
         members[Client.CurrentUser.Id] = await MainGuild.GetMemberAsync(Client.CurrentUser.Id);
 
         sender.Logger.LogInformation("Set current member in cache");

@@ -1,11 +1,11 @@
-﻿using DSharpPlus.Entities;
+﻿using System.Collections.ObjectModel;
+using DSharpPlus.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System.Collections.ObjectModel;
 
-namespace TrickFireDiscordBot.Services;
+namespace DiscordBot.Services;
 
 /// <summary>
 /// A class that represents the state of the bot.
@@ -32,7 +32,6 @@ public class BotState : IAutoRegisteredService
     /// </summary>
     public ulong MessageLoggerChannelId { get; set; } = 0;
 
-
     /// <summary>
     /// The id of the channel to send feedback to.
     /// </summary>
@@ -55,31 +54,38 @@ public class BotState : IAutoRegisteredService
 
     private BotStateOptions Options { get; }
 
-        public BotState(IOptions<BotStateOptions> options)
+    public BotState(IOptions<BotStateOptions> options)
+    {
+        Options = options.Value;
+        if (
+            !File.Exists(Options.FileLocation)
+            || string.IsNullOrWhiteSpace(File.ReadAllText(Options.FileLocation))
+        )
         {
-            Options = options.Value;
-            if (!File.Exists(Options.FileLocation) || string.IsNullOrWhiteSpace(File.ReadAllText(Options.FileLocation)))
-            {
-                File.WriteAllText(Options.FileLocation, "{}");
-            }
-            JsonConvert.PopulateObject(File.ReadAllText(Options.FileLocation), this);
-
-            Members.CollectionChanged += (_, __) => Save();
+            File.WriteAllText(Options.FileLocation, "{}");
         }
+        JsonConvert.PopulateObject(File.ReadAllText(Options.FileLocation), this);
+
+        Members.CollectionChanged += (_, __) => Save();
+    }
 
     public void Save()
     {
         lock (this)
         {
-            File.WriteAllText(Options.FileLocation, JsonConvert.SerializeObject(this, Formatting.Indented));
+            File.WriteAllText(
+                Options.FileLocation,
+                JsonConvert.SerializeObject(this, Formatting.Indented)
+            );
         }
     }
 
     public static void Register(IHostApplicationBuilder builder)
     {
-        builder.Services
-            .AddSingleton<BotState>()
-            .ConfigureTypeSection<BotStateOptions>(builder.Configuration); ;
+        builder
+            .Services.AddSingleton<BotState>()
+            .ConfigureTypeSection<BotStateOptions>(builder.Configuration);
+        ;
     }
 }
 

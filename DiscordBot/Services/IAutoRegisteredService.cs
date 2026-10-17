@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 
-namespace TrickFireDiscordBot.Services;
+namespace DiscordBot.Services;
 
 public interface IAutoRegisteredService
 {

@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "TrickFireDiscordBot": {
+    "DiscordBot": {
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"

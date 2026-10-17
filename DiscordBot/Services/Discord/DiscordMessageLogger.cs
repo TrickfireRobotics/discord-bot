@@ -1,35 +1,42 @@
-﻿using DSharpPlus.Entities;
+﻿using System.Text;
+using System.Threading.Channels;
+using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Text;
-using System.Threading.Channels;
 
-namespace TrickFireDiscordBot.Services.Discord;
+namespace DiscordBot.Services.Discord;
 
 public class DiscordMessageLogger(
     ILogger<DiscordMessageLogger> logger,
     BotState botState,
-    DiscordService discordService) : BackgroundService, IAutoRegisteredService, ILogger
+    DiscordService discordService
+) : BackgroundService, IAutoRegisteredService, ILogger
 {
     private readonly Channel<string> queue = Channel.CreateBounded<string>(100);
     private readonly StringBuilder sb = new();
 
     private DiscordChannel? channel;
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default!;
+    public IDisposable? BeginScope<TState>(TState state)
+        where TState : notnull => default!;
 
-    public bool IsEnabled(LogLevel logLevel)
-        => logLevel != LogLevel.None;
+    public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
 
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter
+    )
     {
         if (!IsEnabled(logLevel))
         {
             return;
         }
 
-        string message = $"[{eventId.Id,2}: {logLevel,-12}] {formatter(state, exception)}";
+        string message = $"[{eventId.Id, 2}: {logLevel, -12}] {formatter(state, exception)}";
         if (message.Length < 2000)
         {
             queue.Writer.TryWrite(message);
@@ -51,7 +58,9 @@ public class DiscordMessageLogger(
             {
                 // Dequeue all items from queue
                 // cts will be cancelled after 3 seconds
-                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(
+                    stoppingToken
+                );
                 cts.CancelAfter(3000);
                 while (!cts.IsCancellationRequested)
                 {
@@ -60,17 +69,17 @@ public class DiscordMessageLogger(
                     {
                         await queue.Reader.WaitToReadAsync(cts.Token);
                     }
-                    catch (OperationCanceledException) 
+                    catch (OperationCanceledException)
                     {
                         break;
                     }
-                    
+
                     // Peek the item
                     if (!queue.Reader.TryPeek(out string? message) || message == null)
                     {
                         continue;
                     }
-                    
+
                     // Make sure it fits within our message, if it doesn't then
                     // send message
                     if (sb.Length + 1 + message.Length > 2000)
@@ -119,7 +128,9 @@ public class DiscordMessageLogger(
         {
             try
             {
-                channel = await discordService.MainGuild.GetChannelAsync(botState.MessageLoggerChannelId);
+                channel = await discordService.MainGuild.GetChannelAsync(
+                    botState.MessageLoggerChannelId
+                );
             }
             catch (DiscordException ex)
             {
@@ -131,7 +142,6 @@ public class DiscordMessageLogger(
 
     public static void Register(IHostApplicationBuilder builder)
     {
-        builder.Services
-            .AddInjectableHostedService<DiscordMessageLogger>();
+        builder.Services.AddInjectableHostedService<DiscordMessageLogger>();
     }
 }

@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Notion.Client;
 
-namespace TrickFireDiscordBot.Services.Notion;
+namespace DiscordBot.Services.Notion;
 
 public class RepeatingCalendarEvents(
-    ILogger<RepeatingCalendarEvents> logger, 
-    IOptions<RepeatingCalendarEventsOptions> options, 
-    WebhookListener listener, 
-    INotionClient notionClient)
-    : NotionWebhookService<Page>(logger, listener), IAutoRegisteredService
+    ILogger<RepeatingCalendarEvents> logger,
+    IOptions<RepeatingCalendarEventsOptions> options,
+    WebhookListener listener,
+    INotionClient notionClient
+) : NotionWebhookService<Page>(logger, listener), IAutoRegisteredService
 {
     public override string WebhookEndpoint => "/repeating-event";
 
@@ -28,19 +28,28 @@ public class RepeatingCalendarEvents(
             try
             {
                 Page page = await PageQueue.Reader.ReadAsync(stoppingToken);
-                
+
                 // Skip if page already has an original event page
                 RepeatedMeeting meeting = new(options.Value, page);
-                if (meeting.OriginalPageId != null || meeting.RepeatEvery == null 
-                    || meeting.RepeatUntil == null || meeting.EventTimeStart == null
-                    || meeting.EventTimeSpan == null)
+                if (
+                    meeting.OriginalPageId != null
+                    || meeting.RepeatEvery == null
+                    || meeting.RepeatUntil == null
+                    || meeting.EventTimeStart == null
+                    || meeting.EventTimeSpan == null
+                )
                 {
                     continue;
                 }
 
                 // Add given page to original event page and fix timezone on event time
-                RelationPropertyValue originalPage = (page.Properties[options.Value.OriginalEventPropertyName] as RelationPropertyValue)!;
-                DatePropertyValue eventTime = (page.Properties[options.Value.EventTimePropertyName] as DatePropertyValue)!;
+                RelationPropertyValue originalPage = (
+                    page.Properties[options.Value.OriginalEventPropertyName]
+                    as RelationPropertyValue
+                )!;
+                DatePropertyValue eventTime = (
+                    page.Properties[options.Value.EventTimePropertyName] as DatePropertyValue
+                )!;
 
                 originalPage.Relation.Add(new ObjectId() { Id = page.Id });
 
@@ -57,7 +66,11 @@ public class RepeatingCalendarEvents(
                 // but the json serializer strips the offset, so we need to add the
                 // timezone to readd the data
                 eventTime.Date.TimeZone = options.Value.TimeZone;
-                await notionClient.Pages.UpdatePropertiesAsync(page.Id, page.Properties, stoppingToken);
+                await notionClient.Pages.UpdatePropertiesAsync(
+                    page.Id,
+                    page.Properties,
+                    stoppingToken
+                );
                 await Task.Delay(333, stoppingToken);
 
                 // No cancellation token so all events are properly made
@@ -83,7 +96,9 @@ public class RepeatingCalendarEvents(
             // fully understand
             Dictionary<string, PropertyValue> properties = new(meeting.Page.Properties);
 
-            DatePropertyValue eventTimeProperty = (properties[options.Value.EventTimePropertyName] as DatePropertyValue)!;
+            DatePropertyValue eventTimeProperty = (
+                properties[options.Value.EventTimePropertyName] as DatePropertyValue
+            )!;
             eventTimeProperty.Date.Start = eventTime;
             eventTimeProperty.Date.End = eventTime + meeting.EventTimeSpan!;
 
@@ -92,11 +107,16 @@ public class RepeatingCalendarEvents(
             // timezone to readd the data
             eventTimeProperty.Date.TimeZone = options.Value.TimeZone;
 
-            await notionClient.Pages.CreateAsync(new PagesCreateParameters()
-            {
-                Properties = properties,
-                Parent = new DatabaseParentInput() { DatabaseId = (meeting.Page.Parent as DatabaseParent)!.DatabaseId }
-            });
+            await notionClient.Pages.CreateAsync(
+                new PagesCreateParameters()
+                {
+                    Properties = properties,
+                    Parent = new DatabaseParentInput()
+                    {
+                        DatabaseId = (meeting.Page.Parent as DatabaseParent)!.DatabaseId,
+                    },
+                }
+            );
             await Task.Delay(333);
             eventTime += meeting.RepeatEvery!.Value;
         }
@@ -105,8 +125,8 @@ public class RepeatingCalendarEvents(
     /// <inheritdoc/>
     public static void Register(IHostApplicationBuilder builder)
     {
-        builder.Services
-            .AddHostedService<RepeatingCalendarEvents>()
+        builder
+            .Services.AddHostedService<RepeatingCalendarEvents>()
             .ConfigureTypeSection<RepeatingCalendarEventsOptions>(builder.Configuration);
     }
 
@@ -121,20 +141,32 @@ public class RepeatingCalendarEvents(
 
         public RepeatedMeeting(RepeatingCalendarEventsOptions options, Page page)
         {
-            DatePropertyValue repeatEveryProperty = (page.Properties[options.RepeatEveryPropertyName] as DatePropertyValue)!;
+            DatePropertyValue repeatEveryProperty = (
+                page.Properties[options.RepeatEveryPropertyName] as DatePropertyValue
+            )!;
             RepeatEvery = repeatEveryProperty.Date.End - repeatEveryProperty.Date.Start;
 
-            DatePropertyValue eventTimeProperty = (page.Properties[options.EventTimePropertyName] as DatePropertyValue)!;
+            DatePropertyValue eventTimeProperty = (
+                page.Properties[options.EventTimePropertyName] as DatePropertyValue
+            )!;
             if (eventTimeProperty.Date.Start is not null)
             {
                 TimeZoneInfo pstZone = TimeZoneInfo.FindSystemTimeZoneById(options.TimeZone);
-                EventTimeStart = TimeZoneInfo.ConvertTime(eventTimeProperty.Date.Start.Value, pstZone);
+                EventTimeStart = TimeZoneInfo.ConvertTime(
+                    eventTimeProperty.Date.Start.Value,
+                    pstZone
+                );
             }
             EventTimeSpan = eventTimeProperty.Date.End - EventTimeStart;
-            RepeatUntil = (page.Properties[options.RepeatUntilPropertyName] as DatePropertyValue)!.Date.Start;
+            RepeatUntil = (page.Properties[options.RepeatUntilPropertyName] as DatePropertyValue)!
+                .Date
+                .Start;
 
-            OriginalPageId = (page.Properties[options.OriginalEventPropertyName] as RelationPropertyValue)!
-                .Relation.FirstOrDefault()?.Id;
+            OriginalPageId = (
+                page.Properties[options.OriginalEventPropertyName] as RelationPropertyValue
+            )!
+                .Relation.FirstOrDefault()
+                ?.Id;
 
             Page = page;
         }
@@ -158,7 +190,6 @@ public class RepeatingCalendarEventsOptions
     /// event
     /// </summary>
     public string OriginalEventPropertyName { get; set; } = "";
-
 
     /// <summary>
     /// The name of the database property for a repeated meeting's event time

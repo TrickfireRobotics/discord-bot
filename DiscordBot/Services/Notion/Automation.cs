@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Notion.Client;
 
-namespace TrickFireDiscordBot.Services.Notion;
+namespace DiscordBot.Services.Notion;
 
 public class Automation
 {
@@ -19,7 +19,6 @@ public class AutomationSource
 
     [JsonProperty("automation_id")]
     public string AutomationId { get; set; } = "";
-
 
     [JsonProperty("action_id")]
     public string ActionId { get; set; } = "";

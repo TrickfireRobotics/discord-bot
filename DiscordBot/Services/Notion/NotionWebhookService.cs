@@ -1,21 +1,22 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using System.Net;
+using System.Threading.Channels;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Notion.Client;
-using System.Net;
-using System.Threading.Channels;
 
-namespace TrickFireDiscordBot.Services.Notion;
+namespace DiscordBot.Services.Notion;
 
 /// <summary>
-/// A class that represents a service that receives Notion Pages through a 
+/// A class that represents a service that receives Notion Pages through a
 /// webhook. Notion pages are added to a channel and can later be processed by
 /// the <see cref="BackgroundService.ExecuteAsync(CancellationToken)"/> method.
 /// <typeparam name="QueueT">The type of the <see cref="PageQueue"/></typeparam>
 /// <param name="logger">The logger for this service</param>
 /// <param name="webhookListener">The webhook listener for this service</param>
 /// </summary>
-public abstract class NotionWebhookService<QueueT>(ILogger logger, WebhookListener webhookListener) : BackgroundService
+public abstract class NotionWebhookService<QueueT>(ILogger logger, WebhookListener webhookListener)
+    : BackgroundService
 {
     /// <summary>
     /// The endpoint of the webhook, including the leading `/`.
@@ -24,7 +25,7 @@ public abstract class NotionWebhookService<QueueT>(ILogger logger, WebhookListen
 
     /// <summary>
     /// The queue that pages are added to when a webhook is received.
-    /// 
+    ///
     /// Defaults to an unbounded channel.
     /// </summary>
     protected virtual Channel<QueueT> PageQueue { get; } = Channel.CreateUnbounded<QueueT>();

@@ -1,14 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Net;
+using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net;
-using System.Text;
 
-namespace TrickFireDiscordBot.Services;
+namespace DiscordBot.Services;
 
-public class WebhookListener(ILogger<WebhookListener> logger, IOptions<WebhookListenerOptions> options) 
-    : BackgroundService, IAutoRegisteredService
+public class WebhookListener(
+    ILogger<WebhookListener> logger,
+    IOptions<WebhookListenerOptions> options
+) : BackgroundService, IAutoRegisteredService
 {
     public event Action<HttpListenerRequest>? OnWebhookReceived;
 
@@ -50,7 +52,7 @@ public class WebhookListener(ILogger<WebhookListener> logger, IOptions<WebhookLi
                 ctx.Response.OutputStream.Write(Encoding.UTF8.GetBytes("Ok"));
                 ctx.Response.OutputStream.Close();
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 logger.LogError(ex, "Exception in WebhookListener main loop: ");
             }
@@ -73,13 +75,12 @@ public class WebhookListener(ILogger<WebhookListener> logger, IOptions<WebhookLi
             // dev machine, nor receive data from trickfirediscordbot.fly.dev
             // So just initialize it as a singleton, which doesn't receive start
             // events
-            builder.Services
-                .AddSingleton<WebhookListener>();
+            builder.Services.AddSingleton<WebhookListener>();
             return;
         }
 
-        builder.Services
-            .AddInjectableHostedService<WebhookListener>()
+        builder
+            .Services.AddInjectableHostedService<WebhookListener>()
             .ConfigureTypeSection<WebhookListenerOptions>(builder.Configuration);
     }
 }

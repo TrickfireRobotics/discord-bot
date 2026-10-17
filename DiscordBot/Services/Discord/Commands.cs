@@ -1,13 +1,13 @@
-﻿using DSharpPlus.Commands;
+﻿using System.ComponentModel;
+using DSharpPlus.Commands;
 using DSharpPlus.Commands.ContextChecks;
 using DSharpPlus.Commands.Processors.SlashCommands;
 using DSharpPlus.Commands.Processors.SlashCommands.Metadata;
 using DSharpPlus.Entities;
 using DSharpPlus.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
-using System.ComponentModel;
 
-namespace TrickFireDiscordBot.Services.Discord;
+namespace DiscordBot.Services.Discord;
 
 /// <summary>
 /// A class representing commands of the bot.
@@ -22,13 +22,16 @@ public static class Commands
         SlashCommandContext context,
         [Parameter("channel")]
         [Description("The channel to send checkin messages to")]
-        DiscordChannel channel,
+            DiscordChannel channel,
         [Parameter("messageid")]
         [Description("The message id to use as the checkin message")]
-        ulong? messageId = null)
+            ulong? messageId = null
+    )
     {
         (DiscordMessage? message, string? error) = await CheckChannelAndMessagePerms(
-            channel, messageId, context.Guild!
+            channel,
+            messageId,
+            context.Guild!
         );
         if (error is not null)
         {
@@ -39,7 +42,11 @@ public static class Commands
         // Delete old message
         BotState state = context.ServiceProvider.GetRequiredService<BotState>();
         (state.CheckInChannelId, state.ListMessageId) = await DeleteOldChannelMessageAndUpdate(
-            channel, state.CheckInChannelId, message, state.ListMessageId, context.Guild!
+            channel,
+            state.CheckInChannelId,
+            message,
+            state.ListMessageId,
+            context.Guild!
         );
         state.Save();
 
@@ -55,7 +62,8 @@ public static class Commands
         SlashCommandContext context,
         [Parameter("channel")]
         [Description("The channel to send debug messages to")]
-        DiscordChannel channel)
+            DiscordChannel channel
+    )
     {
         string? res = CheckChannelPerms(channel, context.Guild!);
         if (res is not null)
@@ -80,17 +88,20 @@ public static class Commands
         SlashCommandContext context,
         [Parameter("feedbackchannel")]
         [Description("The channel to feedback to")]
-        DiscordChannel feedbackChannel,
+            DiscordChannel feedbackChannel,
         [Parameter("formchannel")]
         [Description("The channel to send the feedback form to")]
-        DiscordChannel formChannel,
+            DiscordChannel formChannel,
         [Parameter("formmessageid")]
         [Description("The message id of the form message")]
-        ulong? formMessageId = null)
+            ulong? formMessageId = null
+    )
     {
         // Check permissions and existence of message
         (DiscordMessage? message, string? res) = await CheckChannelAndMessagePerms(
-            formChannel, formMessageId, context.Guild!
+            formChannel,
+            formMessageId,
+            context.Guild!
         );
         res ??= CheckChannelPerms(feedbackChannel, context.Guild!);
         if (res is not null)
@@ -101,9 +112,14 @@ public static class Commands
 
         // Delete old message
         BotState state = context.ServiceProvider.GetRequiredService<BotState>();
-        (state.FeedbackFormChannelId, state.FeedbackFormMessageId) = await DeleteOldChannelMessageAndUpdate(
-            formChannel, state.FeedbackFormChannelId, message, state.FeedbackFormMessageId, context.Guild!
-        );
+        (state.FeedbackFormChannelId, state.FeedbackFormMessageId) =
+            await DeleteOldChannelMessageAndUpdate(
+                formChannel,
+                state.FeedbackFormChannelId,
+                message,
+                state.FeedbackFormMessageId,
+                context.Guild!
+            );
 
         // Send new channel if old one was deleted
         if (state.FeedbackFormMessageId == 0)
@@ -117,7 +133,9 @@ public static class Commands
             }
             catch (DiscordException)
             {
-                await context.RespondAsync("Failed to send new feedback form message. Old one was still deleted");
+                await context.RespondAsync(
+                    "Failed to send new feedback form message. Old one was still deleted"
+                );
                 return;
             }
         }
@@ -149,7 +167,8 @@ public static class Commands
         SlashCommandContext context,
         [Parameter("dryRun")]
         [Description("Set to false to actually affect roles")]
-        bool dryRun = true)
+            bool dryRun = true
+    )
     {
         await context.DeferResponseAsync();
         await context.ServiceProvider.GetRequiredService<RoleSyncer>().SyncAllMemberRoles(dryRun);
@@ -162,12 +181,11 @@ public static class Commands
     [RequirePermissions([], [DiscordPermission.ManageGuild])]
     public static async Task ResyncMemberRoles(
         SlashCommandContext context,
-        [Parameter("member")]
-        [Description("The member to sync the roles of")]
-        DiscordMember member,
+        [Parameter("member")] [Description("The member to sync the roles of")] DiscordMember member,
         [Parameter("dryRun")]
         [Description("Set to false to actually affect roles")]
-        bool dryRun = true)
+            bool dryRun = true
+    )
     {
         await context.DeferResponseAsync();
         await context.ServiceProvider.GetRequiredService<RoleSyncer>().SyncRoles(member, dryRun);
@@ -189,7 +207,9 @@ public static class Commands
     [InteractionAllowedContexts(DiscordInteractionContextType.Guild)]
     public static Task CheckInOut(SlashCommandContext context)
     {
-        return context.ServiceProvider.GetRequiredService<CheckInOutService>().CheckInOutInternal(context.Interaction);
+        return context
+            .ServiceProvider.GetRequiredService<CheckInOutService>()
+            .CheckInOutInternal(context.Interaction);
     }
 
     /// <summary>
@@ -202,10 +222,11 @@ public static class Commands
     /// <param name="guild">The guild to check in</param>
     /// <returns>A tuple of the found message and an error</returns>
     private static async Task<(DiscordMessage? message, string? error)> CheckChannelAndMessagePerms(
-        DiscordChannel channel, 
-        ulong? messageId, 
+        DiscordChannel channel,
+        ulong? messageId,
         DiscordGuild guild
-    ) {
+    )
+    {
         string? res = CheckChannelPerms(channel, guild);
         if (res is not null)
         {
@@ -258,7 +279,10 @@ public static class Commands
     {
         // Guild is not null because it cannot be called outsides guilds
         DiscordPermissions permissions = channel.PermissionsFor(guild.CurrentMember);
-        if (!permissions.HasPermission(DiscordPermission.SendMessages) || !permissions.HasPermission(DiscordPermission.ViewChannel))
+        if (
+            !permissions.HasPermission(DiscordPermission.SendMessages)
+            || !permissions.HasPermission(DiscordPermission.ViewChannel)
+        )
         {
             return "Bot does not have permission to send messages in that channel";
         }
@@ -269,7 +293,6 @@ public static class Commands
         return null;
     }
 
-    
     /// <summary>
     /// Deletes the current message if it is out of date, then does some checks
     /// to figure out the updated channel and message ids.
@@ -280,14 +303,17 @@ public static class Commands
     /// <param name="currMessageId">The current message id in state</param>
     /// <param name="guild">The guild to check in</param>
     /// <returns>The new channel and message ids</returns>
-    private static async Task<(ulong newChannelId, ulong newMessageId)> DeleteOldChannelMessageAndUpdate(
+    private static async Task<(
+        ulong newChannelId,
+        ulong newMessageId
+    )> DeleteOldChannelMessageAndUpdate(
         DiscordChannel channel,
         ulong currChannelId,
         DiscordMessage? message,
         ulong currMessageId,
         DiscordGuild guild
-    ) {
-
+    )
+    {
         // Delete old message
         try
         {

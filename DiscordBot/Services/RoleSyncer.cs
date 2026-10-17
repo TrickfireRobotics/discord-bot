@@ -1,13 +1,13 @@
-﻿using DSharpPlus.Entities;
+﻿using System.Text.RegularExpressions;
+using DiscordBot.Services.Discord;
+using DiscordBot.Services.Notion;
+using DSharpPlus.Entities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Notion.Client;
-using System.Text.RegularExpressions;
-using TrickFireDiscordBot.Services.Discord;
-using TrickFireDiscordBot.Services.Notion;
 
-namespace TrickFireDiscordBot.Services;
+namespace DiscordBot.Services;
 
 public class RoleSyncer(
     ILogger<RoleSyncer> logger,
@@ -15,8 +15,8 @@ public class RoleSyncer(
     INotionClient notionClient,
     WebhookListener listener,
     DiscordService discordService,
-    IOptions<RoleSyncerOptions> options)
-    : NotionWebhookService<RoleSyncer.MemberPage>(logger, listener), IAutoRegisteredService
+    IOptions<RoleSyncerOptions> options
+) : NotionWebhookService<RoleSyncer.MemberPage>(logger, listener), IAutoRegisteredService
 {
     public override string WebhookEndpoint => "/members";
     private IReadOnlyDictionary<ulong, DiscordRole> Roles => discordService.MainGuild.Roles;
@@ -45,10 +45,7 @@ public class RoleSyncer(
         async Task<PaginatedList<IWikiDatabase>> nextPageQuery(string? cursor) =>
             await notionClient.Databases.QueryAsync(
                 options.Value.MembersDatabaseId,
-                new DatabasesQueryParameters()
-                {
-                    StartCursor = cursor
-                }
+                new DatabasesQueryParameters() { StartCursor = cursor }
             );
 
         // Get all notion users and sync their roles
@@ -60,7 +57,10 @@ public class RoleSyncer(
                 continue;
             }
             await Task.Delay(333);
-            DiscordMember? member = await SyncRoles(page: new MemberPage(options.Value, page), dryRun: dryRun);
+            DiscordMember? member = await SyncRoles(
+                page: new MemberPage(options.Value, page),
+                dryRun: dryRun
+            );
             processedMembers.Add(member);
         }
 
@@ -84,7 +84,10 @@ public class RoleSyncer(
         {
             try
             {
-                await SyncRoles(page: await PageQueue.Reader.ReadAsync(stoppingToken), dryRun: false);
+                await SyncRoles(
+                    page: await PageQueue.Reader.ReadAsync(stoppingToken),
+                    dryRun: false
+                );
             }
             catch (Exception ex)
             {
@@ -105,7 +108,10 @@ public class RoleSyncer(
             options.Value.MembersDatabaseId,
             new DatabasesQueryParameters()
             {
-                Filter = new FormulaFilter(options.Value.DiscordUsernamePropertyName, @string: new TextFilter.Condition(equal: member.Username))
+                Filter = new FormulaFilter(
+                    options.Value.DiscordUsernamePropertyName,
+                    @string: new TextFilter.Condition(equal: member.Username)
+                ),
             }
         );
 
@@ -123,7 +129,11 @@ public class RoleSyncer(
         await SyncRoles(member: member, page: page, dryRun: dryRun);
     }
 
-    private async Task<DiscordMember?> SyncRoles(DiscordMember? member = null, MemberPage? page = null, bool dryRun = true)
+    private async Task<DiscordMember?> SyncRoles(
+        DiscordMember? member = null,
+        MemberPage? page = null,
+        bool dryRun = true
+    )
     {
         HashSet<DiscordRole> newRoles = [];
         DiscordRole inactiveRole = Roles[options.Value.InactiveRoleId];
@@ -146,23 +156,36 @@ public class RoleSyncer(
         // If neither are given, give up
         else
         {
-            throw new ArgumentNullException("Both `member` and `page` cannot be null", innerException: null);
+            throw new ArgumentNullException(
+                "Both `member` and `page` cannot be null",
+                innerException: null
+            );
         }
 
         // Don't affect member's whose roles are safe, or who have roles
         // belonging to bots.
         if (member.Roles.Any(role => options.Value.SafeRoleIds.Contains(role.Id) || role.IsManaged))
         {
-            logger.LogDebug("Member ignored during sync: `{}` (`{}`)", member.Username, member.DisplayName);
-            messageLogger.LogDebug("Member ignored during sync: `{}` (`{}`)", member.Username, member.DisplayName);
+            logger.LogDebug(
+                "Member ignored during sync: `{}` (`{}`)",
+                member.Username,
+                member.DisplayName
+            );
+            messageLogger.LogDebug(
+                "Member ignored during sync: `{}` (`{}`)",
+                member.Username,
+                member.DisplayName
+            );
             return member;
         }
 
         // Add any roles the bot cant touch
         int highestRole = discordService.MainGuild.CurrentMember.Roles.Max(role => role.Position);
-        newRoles.UnionWith(member.Roles.Where(
-            role => role.Position >= highestRole || options.Value.IgnoredRoleIds.Contains(role.Id)
-        ));
+        newRoles.UnionWith(
+            member.Roles.Where(role =>
+                role.Position >= highestRole || options.Value.IgnoredRoleIds.Contains(role.Id)
+            )
+        );
 
         string logString = string.Join("`, `", newRoles.Select(role => role.Name));
         bool hasChanged = !newRoles.SetEquals(member.Roles);
@@ -196,15 +219,23 @@ public class RoleSyncer(
             try
             {
                 await member.SendMessageAsync(options.Value.InactiveMessage);
-                logger.LogDebug("Member sent inactive message: `{}` (`{}`)", member.Username, member.DisplayName);
-                messageLogger.LogDebug("Member sent inactive message: `{}` (`{}`)", member.Username, member.DisplayName);
+                logger.LogDebug(
+                    "Member sent inactive message: `{}` (`{}`)",
+                    member.Username,
+                    member.DisplayName
+                );
+                messageLogger.LogDebug(
+                    "Member sent inactive message: `{}` (`{}`)",
+                    member.Username,
+                    member.DisplayName
+                );
             }
             catch (Exception ex)
             {
                 logger.LogDebug(
                     "Failed to send member `{}` (`{}`) inactive message sent inactive message: {}",
-                    member.Username, 
-                    member.DisplayName, 
+                    member.Username,
+                    member.DisplayName,
                     ex
                 );
                 messageLogger.LogDebug(
@@ -236,13 +267,16 @@ public class RoleSyncer(
         string username = page.DiscordUsername.TrimStart('@').ToLower();
 
         // Check cache for user
-        DiscordMember? member = discordService.MainGuild.Members.Values
-            .FirstOrDefault(member => member.Username == username);
+        DiscordMember? member = discordService.MainGuild.Members.Values.FirstOrDefault(member =>
+            member.Username == username
+        );
 
         // If not in cache, search the guild
         if (member is null)
         {
-            IReadOnlyList<DiscordMember> search = await discordService.MainGuild.SearchMembersAsync(username);
+            IReadOnlyList<DiscordMember> search = await discordService.MainGuild.SearchMembersAsync(
+                username
+            );
             if (search.Count == 0 || search[0].Username != username)
             {
                 logger.LogWarning("Could not find member: {}", username);
@@ -356,11 +390,15 @@ public class RoleSyncer(
         {
             try
             {
-                ListPropertyItem item = (await notionClient.Pages.RetrievePagePropertyItemAsync(new RetrievePropertyItemParameters()
-                {
-                    PageId = id,
-                    PropertyId = _teamPageNamePropertyId
-                }) as ListPropertyItem)!;
+                ListPropertyItem item = (
+                    await notionClient.Pages.RetrievePagePropertyItemAsync(
+                        new RetrievePropertyItemParameters()
+                        {
+                            PageId = id,
+                            PropertyId = _teamPageNamePropertyId,
+                        }
+                    ) as ListPropertyItem
+                )!;
                 return (item.Results.First() as TitlePropertyItem)!.Title.PlainText;
             }
             catch (NotionApiException ex)
@@ -377,8 +415,9 @@ public class RoleSyncer(
 
         // If it doesn't or fails, then recache it and get the whole page
         Page teamPage = await notionClient.Pages.RetrieveAsync(id);
-        TitlePropertyValue nameValue = (teamPage.Properties[options.Value.TeamNamePropertyName]
-            as TitlePropertyValue)!;
+        TitlePropertyValue nameValue = (
+            teamPage.Properties[options.Value.TeamNamePropertyName] as TitlePropertyValue
+        )!;
         _teamPageNamePropertyId = nameValue.Id;
         return nameValue.Title[0].PlainText;
     }
@@ -391,7 +430,7 @@ public class RoleSyncer(
     /// <returns>The role with a matching name, or null</returns>
     private DiscordRole? GetRoleOrDefault(string roleName)
     {
-        DiscordRole? role = Roles.Values.FirstOrDefault(r => r.Name ==  roleName);
+        DiscordRole? role = Roles.Values.FirstOrDefault(r => r.Name == roleName);
         if (role is null)
         {
             logger.LogWarning("Could not find role with name: {}", roleName);
@@ -405,8 +444,8 @@ public class RoleSyncer(
     /// <inheritdoc/>
     public static void Register(IHostApplicationBuilder builder)
     {
-        builder.Services
-            .AddInjectableHostedService<RoleSyncer>()
+        builder
+            .Services.AddInjectableHostedService<RoleSyncer>()
             .ConfigureTypeSection<RoleSyncerOptions>(builder.Configuration);
     }
 
@@ -415,20 +454,28 @@ public class RoleSyncer(
     /// </summary>
     public class MemberPage(RoleSyncerOptions options, Page notionPage)
     {
-        public string? DiscordUsername { get; } = (notionPage.Properties[options.DiscordUsernamePropertyName] as FormulaPropertyValue)
-            !.Formula.String;
-        public string ActiveStatus { get; } = (notionPage.Properties[options.ActivePropertyName] as SelectPropertyValue)
-            !.Select.Name;
-        public string[] PositionNames { get; } = (notionPage.Properties[options.ClubPositionsPropertyName] as MultiSelectPropertyValue)
-            !.MultiSelect.Select(option => option.Name).ToArray();
-        public string[] DisciplineNames { get; } = (notionPage.Properties[options.DisciplinesPropertyName]as MultiSelectPropertyValue)
-            !.MultiSelect.Select(option => option.Name).ToArray();
+        public string? DiscordUsername { get; } =
+            (notionPage.Properties[options.DiscordUsernamePropertyName] as FormulaPropertyValue)!
+                .Formula
+                .String;
+        public string ActiveStatus { get; } =
+            (notionPage.Properties[options.ActivePropertyName] as SelectPropertyValue)!.Select.Name;
+        public string[] PositionNames { get; } =
+            (notionPage.Properties[options.ClubPositionsPropertyName] as MultiSelectPropertyValue)!
+                .MultiSelect.Select(option => option.Name)
+                .ToArray();
+        public string[] DisciplineNames { get; } =
+            (notionPage.Properties[options.DisciplinesPropertyName] as MultiSelectPropertyValue)!
+                .MultiSelect.Select(option => option.Name)
+                .ToArray();
 
         /// <summary>
         /// The PAGE IDS, not the name, of the teams the user is on.
         /// </summary>
-        public string[] TeamIds { get; } = (notionPage.Properties[options.TeamsPropertyName] as RelationPropertyValue)
-            !.Relation.Select(id => id.Id).ToArray();
+        public string[] TeamIds { get; } =
+            (notionPage.Properties[options.TeamsPropertyName] as RelationPropertyValue)!
+                .Relation.Select(id => id.Id)
+                .ToArray();
 
         /// <summary>
         /// The URL pointing to the notion page.

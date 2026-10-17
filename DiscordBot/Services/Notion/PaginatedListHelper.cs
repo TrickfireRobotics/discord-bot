@@ -1,6 +1,6 @@
 ﻿using Notion.Client;
 
-namespace TrickFireDiscordBot.Services.Notion;
+namespace DiscordBot.Services.Notion;
 
 /// <summary>
 /// Various helpers for the PaginatedList<T> class.
@@ -16,7 +16,10 @@ public static class PaginatedListHelper
     /// <param name="delaySecs">The delay to use between requests</param>
     /// <returns>An async enuerable of every item in the paginated list</returns>
     public static async IAsyncEnumerable<T> GetEnumerable<T>(
-        Func<string?, Task<PaginatedList<T>>> query, string? cursor = null, float delaySecs = 0.3f)
+        Func<string?, Task<PaginatedList<T>>> query,
+        string? cursor = null,
+        float delaySecs = 0.3f
+    )
     {
         PaginatedList<T> list;
         do
@@ -29,7 +32,6 @@ public static class PaginatedListHelper
             {
                 yield return item;
             }
-        }
-        while (list.HasMore);
+        } while (list.HasMore);
     }
 }
