@@ -34,9 +34,9 @@ foreach (Type type in asm.GetTypes())
 
 Each service implements a static `Register(IHostApplicationBuilder)` method that wires up its own
 DI registrations and config binding (via `ConfigureTypeSection<T>`, see
-[Configuration](./configuration.mdx)). Adding a new service is just: implement
-`IAutoRegisteredService`, write `Register`, and it picks itself up — no central registration list
-to maintain.
+[Configuration reference](#configuration-reference) below). Adding a new service is just:
+implement `IAutoRegisteredService`, write `Register`, and it picks itself up — no central
+registration list to maintain.
 
 <Callout type="idea" title="Adding a new service">
     Look at an existing small service like `JoinMessageEvent` as a template: implement the event
@@ -65,4 +65,53 @@ pinning a stale snapshot from whenever the bot first connected.
     up after days of uptime with periodic reconnects — not in short local test runs. If you need
     guild data, go through `MainGuild` (or `Client.Guilds` directly) each time rather than storing
     a reference.
+</Callout>
+
+## Configuration reference
+
+Each service that needs configuration defines an `Options` class, and `config.json` has one
+top-level key per class, named after the class itself (e.g. `RoleSyncerOptions`) — bound via
+`ConfigureTypeSection<T>`, which maps `config.GetSection(typeof(T).Name)` to `T`. Adding a new
+configurable service just means adding a matching section, no extra wiring required.
+
+`config.json` sits alongside `secrets.txt` in the bot's working directory (see
+[Getting Started](./getting-started.mdx)) and isn't checked into the repo, since values like
+Notion database IDs and Discord role/channel IDs differ between a dev bot and production.
+
+| Section | Field | Description |
+| --- | --- | --- |
+| `DiscordServiceOptions` | `MainGuildId` | The ID of the Discord server (guild) the bot operates in. |
+| `JoinMessageEventOptions` | `JoinMessage` | Welcome message sent when a member joins. `{0}` is replaced with the new member's mention. |
+| `FeedbackServiceOptions` | `FeedbackFormMessage` | Message content posted alongside the anonymous feedback form button. |
+| `ClubInfoEventOptions` | `ClubInfoLogoUrl` | URL of the logo shown on the club info message. |
+| `ClubInfoEventOptions` | `ClubInfoMessage` | The club info message content. |
+| `RoleSyncerOptions` | `TeamsDatabaseId` | Notion database ID for teams. |
+| `RoleSyncerOptions` | `TeamNamePropertyName` | Property name for a team's name. |
+| `RoleSyncerOptions` | `MembersDatabaseId` | Notion database ID for members. |
+| `RoleSyncerOptions` | `DiscordUsernamePropertyName` | Property name for a member's Discord username. |
+| `RoleSyncerOptions` | `ActivePropertyName` | Property name for a member's active status. |
+| `RoleSyncerOptions` | `ClubPositionsPropertyName` | Property name for a member's club position(s). |
+| `RoleSyncerOptions` | `DisciplinesPropertyName` | Property name for a member's discipline(s). |
+| `RoleSyncerOptions` | `TeamsPropertyName` | Property name for a member's team(s). |
+| `RoleSyncerOptions` | `TechnicalLeadRoleId` | Discord role ID granted to technical leads. |
+| `RoleSyncerOptions` | `TechnicalLeadRegex` | Regex matched against a member's club position(s) to decide who gets the technical lead role. |
+| `RoleSyncerOptions` | `InactiveRoleId` | Discord role ID applied to inactive members. |
+| `RoleSyncerOptions` | `SafeRoleIds` | Role IDs whose holders are skipped entirely by the syncer. |
+| `RoleSyncerOptions` | `IgnoredRoleIds` | Role IDs the syncer never removes, even if otherwise out of sync. |
+| `RoleSyncerOptions` | `InactiveMessage` | DM sent to a member when they're marked inactive. |
+| `BotStateOptions` | `FileLocation` | Path (relative to the working directory) where the bot persists state between restarts. |
+| `AttendanceTrackerOptions` | `MemberAttendanceDatabaseId` | Notion database ID for attendance records. |
+| `AttendanceTrackerOptions` | `MembersDatabaseId` | Notion database ID for members. |
+| `AttendanceTrackerOptions` | `DiscordUsernamePropertyName` | Property name for a member's Discord username. |
+| `RepeatingCalendarEventsOptions` | `RepeatEveryPropertyName` | Property name for a meeting's repeat interval. |
+| `RepeatingCalendarEventsOptions` | `RepeatUntilPropertyName` | Property name for a meeting's repeat end date. |
+| `RepeatingCalendarEventsOptions` | `OriginalEventPropertyName` | Property name linking a repeated instance back to its original event. |
+| `RepeatingCalendarEventsOptions` | `EventTimePropertyName` | Property name for a meeting's event time. |
+| `RepeatingCalendarEventsOptions` | `TimeZone` | IANA timezone used when generating repeated event instances. |
+| `WebhookListenerOptions` | `Prefixes` | HTTP listener prefixes. Defaults to `["http://*:8080/"]` — only needs an entry if changing the port. |
+
+<Callout type="idea" title="Changing TechnicalLeadRegex">
+    This regex is matched against the raw "Club Position(s)" text from Notion, so test it against
+    real values before changing it — a bad pattern silently grants or withholds the lead role
+    rather than erroring.
 </Callout>

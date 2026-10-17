@@ -52,7 +52,7 @@ services:
 - `mem_limit: 512m` — caps container memory. If the process grows unbounded, Docker kills and
   restarts it rather than it taking down other things on the box.
 - The `/data` volume is where `BotStateOptions.FileLocation` persists bot state between restarts
-  (see [Configuration](./configuration.mdx)).
+  (see [Architecture](./architecture.mdx#configuration-reference)).
 - `secrets.txt` is bind-mounted read-only rather than baked into the image at build time, so the
   token never ends up sitting in plaintext inside an image layer.
 

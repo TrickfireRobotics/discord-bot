@@ -8,6 +8,11 @@ This is TrickFire's Discord bot — it tracks when members check in and out of t
 roles and attendance from Notion, and handles a few other member-facing Discord flows. It's
 built in C# on [DSharpPlus](https://dsharpplus.github.io/) and targets .NET 9.
 
+<Callout type="info" title="Just want to know what it does?">
+    This page is for setting up a dev environment. If you're wondering what the bot actually does
+    day-to-day rather than how to build it, see [What This Bot Does](./what-it-does.mdx) instead.
+</Callout>
+
 ## Prerequisites
 
 You'll need a Discord bot token and a Notion integration secret for the bot to actually connect
@@ -50,7 +55,7 @@ The bot reads two files from its working directory at startup: `secrets.txt` and
     </Step>
     <Step>
         Fill in `DiscordBot/config.json` with the options each service needs — see
-        [Configuration](./configuration.mdx) for the full field reference.
+        [Architecture](./architecture.mdx#configuration-reference) for the full field reference.
     </Step>
 </Steps>
 
