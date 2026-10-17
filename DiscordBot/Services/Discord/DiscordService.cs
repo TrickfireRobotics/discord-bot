@@ -23,8 +23,13 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
     public DiscordClient Client { get; } = client;
 
     public DiscordServiceOptions Options { get; } = options.Value;
-    public DiscordGuild MainGuild { get; } =
-        client.GetGuildAsync(options.Value.MainGuildId).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Always resolves to whatever guild object DSharpPlus's own cache
+    /// currently holds, instead of a fixed snapshot, so it stays correct
+    /// across reconnects without fighting the library's cache lifecycle.
+    /// </summary>
+    public DiscordGuild MainGuild => Client.Guilds[Options.MainGuildId];
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -77,19 +82,10 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
 
     public async Task HandleEventAsync(DiscordClient sender, SessionCreatedEventArgs eventArgs)
     {
-        // Connecting changes the guild in the cache, so reset it to the one
-        // we like
-        (Client.Guilds as IDictionary<ulong, DiscordGuild>)![MainGuild.Id] = MainGuild;
-
-        // Make sure CurrentMember is not null
-        FieldInfo memberField = typeof(DiscordGuild).GetField(
-            "members",
-            BindingFlags.Instance | BindingFlags.NonPublic
-        )!;
-        IDictionary<ulong, DiscordMember> members = (
-            memberField.GetValue(MainGuild) as IDictionary<ulong, DiscordMember>
-        )!;
-        members[Client.CurrentUser.Id] = await MainGuild.GetMemberAsync(Client.CurrentUser.Id);
+        // Make sure CurrentMember is cached after (re)connecting. GetMemberAsync
+        // populates the guild's own member cache as part of its normal,
+        // supported behavior, so no manual cache poking is needed here.
+        await MainGuild.GetMemberAsync(Client.CurrentUser.Id);
 
         sender.Logger.LogInformation("Set current member in cache");
     }
