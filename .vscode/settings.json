@@ -1,15 +1,15 @@
 {
-  "dotnet.defaultSolution": "DiscordBot.sln",
-  "editor.formatOnSave": true,
-  "[csharp]": {
-    "editor.defaultFormatter": "csharpier.csharpier-vscode"
-  },
-  "files.exclude": {
-    "**/bin": true,
-    "**/obj": true
-  },
-  "search.exclude": {
-    "**/bin": true,
-    "**/obj": true
-  }
+    "dotnet.defaultSolution": "DiscordBot.sln",
+    "editor.formatOnSave": true,
+    "[csharp]": {
+        "editor.defaultFormatter": "csharpier.csharpier-vscode"
+    },
+    "files.exclude": {
+        "**/bin": true,
+        "**/obj": true
+    },
+    "search.exclude": {
+        "**/bin": true,
+        "**/obj": true
+    }
 }

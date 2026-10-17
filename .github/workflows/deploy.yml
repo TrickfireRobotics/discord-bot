@@ -35,4 +35,4 @@ jobs:
           chmod 600 /opt/discord-bot/secrets.txt
 
       - name: Build and restart
-        run: docker compose up -d --build
+        run: docker compose -f docker/docker-compose.yml up -d --build

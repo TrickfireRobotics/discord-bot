@@ -17,7 +17,7 @@ self-hosted GitHub Actions runner that lives on that same box.
     <Step>
         The `deploy` job runs on the self-hosted runner. It writes `BOT_TOKEN` and
         `NOTION_SECRET` (from GitHub Actions secrets) to `/opt/discord-bot/secrets.txt`, then runs
-        `docker compose up -d --build`.
+        `docker compose -f docker/docker-compose.yml up -d --build`.
     </Step>
 </Steps>
 
@@ -30,12 +30,17 @@ step — the image is built and started in place.
     outside the git checkout entirely — specifically so a deploy never wipes them.
 </Callout>
 
-## docker-compose.yml
+## docker/docker-compose.yml
 
-```yaml title="docker-compose.yml"
+Docker files live under `docker/` to keep the repo root clean. The build context still points
+at the repo root (`context: ..`) so `COPY . .` in the Dockerfile sees the actual source.
+
+```yaml title="docker/docker-compose.yml"
 services:
   bot:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     restart: unless-stopped
     mem_limit: 512m
     volumes:
