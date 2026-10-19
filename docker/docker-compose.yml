@@ -6,5 +6,5 @@ services:
     restart: unless-stopped
     mem_limit: 512m
     volumes:
-      - /opt/discord-bot/data:/data
-      - /opt/discord-bot/secrets.txt:/DiscordBot/secrets.txt:ro
+      - /home/trickfire/discord-bot/data:/data
+      - /home/trickfire/discord-bot/secrets.txt:/DiscordBot/secrets.txt:ro

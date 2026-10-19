@@ -30,9 +30,9 @@ jobs:
 
       - name: Write secrets
         run: |
-          mkdir -p /opt/discord-bot/data
-          printf '%s\n%s\n' "${{ secrets.BOT_TOKEN }}" "${{ secrets.NOTION_SECRET }}" > /opt/discord-bot/secrets.txt
-          chmod 600 /opt/discord-bot/secrets.txt
+          mkdir -p /home/trickfire/discord-bot/data
+          printf '%s\n%s\n' "${{ secrets.BOT_TOKEN }}" "${{ secrets.NOTION_SECRET }}" > /home/trickfire/discord-bot/secrets.txt
+          chmod 600 /home/trickfire/discord-bot/secrets.txt
 
       - name: Build and restart
         run: docker compose -f docker/docker-compose.yml up -d --build
