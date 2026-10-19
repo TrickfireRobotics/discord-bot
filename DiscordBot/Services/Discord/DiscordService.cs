@@ -25,11 +25,18 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
     public DiscordServiceOptions Options { get; } = options.Value;
 
     /// <summary>
-    /// Always resolves to whatever guild object DSharpPlus's own cache
-    /// currently holds, instead of a fixed snapshot, so it stays correct
-    /// across reconnects without fighting the library's cache lifecycle.
+    /// Resolves to whatever guild object DSharpPlus's own cache currently
+    /// holds, instead of a fixed snapshot, so it stays correct across
+    /// reconnects without fighting the library's cache lifecycle. Falls back
+    /// to a one-off REST fetch if accessed before the gateway cache is
+    /// populated (e.g. another hosted service starting before this one
+    /// finishes connecting) — nothing is cached here, so it stops falling
+    /// back the moment the gateway catches up.
     /// </summary>
-    public DiscordGuild MainGuild => Client.Guilds[Options.MainGuildId];
+    public DiscordGuild MainGuild =>
+        Client.Guilds.TryGetValue(Options.MainGuildId, out DiscordGuild? guild)
+            ? guild
+            : Client.GetGuildAsync(Options.MainGuildId).GetAwaiter().GetResult();
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
