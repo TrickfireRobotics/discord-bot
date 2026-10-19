@@ -108,6 +108,16 @@ public class ActivityLog : IAutoRegisteredService
         }
     }
 
+    public void ClearLastError()
+    {
+        lock (_entries)
+        {
+            LastErrorAt = null;
+            LastError = null;
+            Save();
+        }
+    }
+
     /// <summary>
     /// The most recent entries, newest first.
     /// </summary>

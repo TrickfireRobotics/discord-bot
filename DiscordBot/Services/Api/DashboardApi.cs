@@ -14,9 +14,9 @@ using Newtonsoft.Json.Serialization;
 namespace DiscordBot.Services.Api;
 
 /// <summary>
-/// Read-only JSON endpoints the TrickFire dashboard polls to show what the bot
-/// is doing. Served off the same listener as the Notion webhooks, so every
-/// route here requires a token even though it is only published on loopback.
+/// JSON endpoints the TrickFire dashboard uses to show and manage the bot.
+/// Served off the same listener as the Notion webhooks, so every route here
+/// requires a token even though it is only published on loopback.
 /// </summary>
 public class DashboardApi(
     ILogger<DashboardApi> logger,
@@ -53,6 +53,14 @@ public class DashboardApi(
             Authorized(req => Json(activity.Recent(Limit(req, 50))))
         );
         listener.MapRoute("/api/logs", Authorized(req => Json(logs.Recent(Limit(req, 200)))));
+        listener.MapRoute(
+            "/api/errors/clear",
+            Authorized(request =>
+                request.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase)
+                    ? ClearLastError()
+                    : new RouteResponse(HttpStatusCode.MethodNotAllowed, "application/json", "{}")
+            )
+        );
 
         return Task.CompletedTask;
     }
@@ -108,6 +116,12 @@ public class DashboardApi(
             "application/json",
             JsonConvert.SerializeObject(payload, JsonSettings)
         );
+    }
+
+    private RouteResponse ClearLastError()
+    {
+        activity.ClearLastError();
+        return new RouteResponse(HttpStatusCode.NoContent, "application/json", string.Empty);
     }
 
     /// <summary>
