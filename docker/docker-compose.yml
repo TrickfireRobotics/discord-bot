@@ -5,6 +5,10 @@ services:
       dockerfile: docker/Dockerfile
     restart: unless-stopped
     mem_limit: 512m
+    # Loopback only: the dashboard reads the bot's status API from the host,
+    # and the host's 8080 is already taken by pl3xmap.
+    ports:
+      - "127.0.0.1:8081:8080"
     volumes:
       - /home/trickfire/discord-bot/data:/data
       - /home/trickfire/discord-bot/secrets.txt:/DiscordBot/secrets.txt:ro

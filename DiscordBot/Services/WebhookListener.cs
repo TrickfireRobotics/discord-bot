@@ -15,6 +15,18 @@ public class WebhookListener(
     public event Action<HttpListenerRequest>? OnWebhookReceived;
 
     private readonly HttpListener _listener = new();
+    private readonly Dictionary<string, Func<HttpListenerRequest, RouteResponse>> _routes = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    /// <summary>
+    /// Registers a handler that answers requests for the given path itself,
+    /// instead of being broadcast to <see cref="OnWebhookReceived"/>.
+    /// </summary>
+    public void MapRoute(string path, Func<HttpListenerRequest, RouteResponse> handler)
+    {
+        _routes[path] = handler;
+    }
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
@@ -44,12 +56,22 @@ public class WebhookListener(
                 HttpListenerContext ctx;
                 ctx = await _listener.GetContextAsync().WaitAsync(stoppingToken);
 
-                // Read request body
-                OnWebhookReceived?.Invoke(ctx.Request);
+                string path = ctx.Request.Url?.AbsolutePath ?? "";
+                RouteResponse response;
+                if (_routes.TryGetValue(path, out var handler))
+                {
+                    response = handler(ctx.Request);
+                }
+                else
+                {
+                    // Read request body
+                    OnWebhookReceived?.Invoke(ctx.Request);
+                    response = new RouteResponse(HttpStatusCode.OK, "text/plain", "Ok");
+                }
 
-                // Return ok response on request
-                ctx.Response.StatusCode = (int)HttpStatusCode.OK;
-                ctx.Response.OutputStream.Write(Encoding.UTF8.GetBytes("Ok"));
+                ctx.Response.StatusCode = (int)response.StatusCode;
+                ctx.Response.ContentType = response.ContentType;
+                ctx.Response.OutputStream.Write(Encoding.UTF8.GetBytes(response.Body));
                 ctx.Response.OutputStream.Close();
             }
             catch (Exception ex)
@@ -84,6 +106,11 @@ public class WebhookListener(
             .ConfigureTypeSection<WebhookListenerOptions>(builder.Configuration);
     }
 }
+
+/// <summary>
+/// What a <see cref="WebhookListener"/> route sends back to the caller.
+/// </summary>
+public record RouteResponse(HttpStatusCode StatusCode, string ContentType, string Body);
 
 public class WebhookListenerOptions()
 {

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using DiscordBot.Services;
+using DiscordBot.Services.Api;
 using DSharpPlus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,6 +76,12 @@ internal class Program
         builder.Configuration["BOT_TOKEN"] = secrets[0];
         builder.Configuration["NOTION_SECRET"] = secrets[1];
 
+        // Optional third line: lets the dashboard read the bot's status API.
+        if (secrets.Length > 2 && !string.IsNullOrWhiteSpace(secrets[2]))
+        {
+            builder.Configuration["DASHBOARD_TOKEN"] = secrets[2];
+        }
+
         builder.Services.ConfigureTypeSection<HostOptions>(builder.Configuration);
 
         // Get all types
@@ -98,9 +105,14 @@ internal class Program
             registerMethod.Invoke(null, [builder]);
         }
 
+        // Keep recent log lines in memory so the dashboard can tail them
+        LogBuffer logBuffer = new();
+        builder.Services.AddSingleton(logBuffer);
+
         // Setup logging
         builder
             .Logging.SetMinimumLevel(LogLevel.Debug)
+            .AddProvider(new LogBufferProvider(logBuffer))
             .AddConsole(opt =>
             {
                 opt.FormatterName = "logger";

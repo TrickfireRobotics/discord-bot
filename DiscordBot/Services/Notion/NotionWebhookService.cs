@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Threading.Channels;
+using DiscordBot.Services.Api;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -15,8 +16,11 @@ namespace DiscordBot.Services.Notion;
 /// <param name="logger">The logger for this service</param>
 /// <param name="webhookListener">The webhook listener for this service</param>
 /// </summary>
-public abstract class NotionWebhookService<QueueT>(ILogger logger, WebhookListener webhookListener)
-    : BackgroundService
+public abstract class NotionWebhookService<QueueT>(
+    ILogger logger,
+    WebhookListener webhookListener,
+    ActivityLog activity
+) : BackgroundService
 {
     /// <summary>
     /// The endpoint of the webhook, including the leading `/`.
@@ -31,6 +35,8 @@ public abstract class NotionWebhookService<QueueT>(ILogger logger, WebhookListen
     protected virtual Channel<QueueT> PageQueue { get; } = Channel.CreateUnbounded<QueueT>();
 
     protected WebhookListener WebhookListener => webhookListener;
+
+    protected ActivityLog Activity => activity;
 
     /// <inheritdoc/>
     public override Task StartAsync(CancellationToken cancellationToken)
@@ -54,6 +60,8 @@ public abstract class NotionWebhookService<QueueT>(ILogger logger, WebhookListen
         {
             return;
         }
+
+        activity.MarkNotionWebhook();
 
         using StreamReader reader = new(request.InputStream);
         string json = reader.ReadToEnd();
