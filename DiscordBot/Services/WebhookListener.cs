@@ -74,6 +74,10 @@ public class WebhookListener(
                 ctx.Response.OutputStream.Write(Encoding.UTF8.GetBytes(response.Body));
                 ctx.Response.OutputStream.Close();
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Exception in WebhookListener main loop: ");

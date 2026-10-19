@@ -91,6 +91,10 @@ public class RoleSyncer(
                     dryRun: false
                 );
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error in RoleSyncer main loop: ");
@@ -154,7 +158,7 @@ public class RoleSyncer(
             {
                 return null;
             }
-            newRoles.UnionWith(await GetRoles(page));
+            newRoles.UnionWith(await GetRoles(page, recordMissingRoles: !dryRun));
         }
         // If neither are given, give up
         else
@@ -304,12 +308,12 @@ public class RoleSyncer(
     }
 
     #region Role Getting
-    private async Task<IEnumerable<DiscordRole>> GetRoles(MemberPage page)
+    private async Task<IEnumerable<DiscordRole>> GetRoles(MemberPage page, bool recordMissingRoles)
     {
         HashSet<DiscordRole> roles = [];
 
         // Get active role
-        DiscordRole? activeRole = GetActiveRole(page);
+        DiscordRole? activeRole = GetActiveRole(page, recordMissingRoles);
         if (activeRole is not null)
         {
             roles.Add(activeRole);
@@ -325,7 +329,7 @@ public class RoleSyncer(
         // Get roles for teams
         if (activeRole is null)
         {
-            foreach (DiscordRole role in await GetTeams(page))
+            foreach (DiscordRole role in await GetTeams(page, recordMissingRoles))
             {
                 roles.Add(role);
             }
@@ -346,7 +350,10 @@ public class RoleSyncer(
             }
 
             // Remove team suffix to make roles a little easier to read
-            DiscordRole? positionRole = GetRoleOrDefault(positionName.Replace(" Team", ""));
+            DiscordRole? positionRole = GetRoleOrDefault(
+                positionName.Replace(" Team", ""),
+                recordMissingRoles
+            );
             if (positionRole is not null)
             {
                 roles.Add(positionRole);
@@ -356,7 +363,7 @@ public class RoleSyncer(
         // Get discipline roles
         foreach (string disciplineName in page.DisciplineNames)
         {
-            DiscordRole? positionRole = GetRoleOrDefault(disciplineName);
+            DiscordRole? positionRole = GetRoleOrDefault(disciplineName, recordMissingRoles);
             if (positionRole is not null)
             {
                 roles.Add(positionRole);
@@ -365,7 +372,7 @@ public class RoleSyncer(
         return roles;
     }
 
-    private DiscordRole? GetActiveRole(MemberPage page)
+    private DiscordRole? GetActiveRole(MemberPage page, bool recordMissingRoles)
     {
         if (page.ActiveStatus == "Active")
         {
@@ -373,11 +380,11 @@ public class RoleSyncer(
         }
         else
         {
-            return GetRoleOrDefault(page.ActiveStatus);
+            return GetRoleOrDefault(page.ActiveStatus, recordMissingRoles);
         }
     }
 
-    private async Task<IEnumerable<DiscordRole>> GetTeams(MemberPage page)
+    private async Task<IEnumerable<DiscordRole>> GetTeams(MemberPage page, bool recordMissingRoles)
     {
         List<DiscordRole> roles = [];
         foreach (string teamId in page.TeamIds)
@@ -385,7 +392,7 @@ public class RoleSyncer(
             string teamName = await GetTeamName(teamId);
 
             // Remove team suffix to make roles a little easier to read
-            DiscordRole? role = GetRoleOrDefault(teamName.Replace(" Team", ""));
+            DiscordRole? role = GetRoleOrDefault(teamName.Replace(" Team", ""), recordMissingRoles);
             if (role is not null)
             {
                 roles.Add(role);
@@ -440,13 +447,21 @@ public class RoleSyncer(
     /// </summary>
     /// <param name="roleName">The name of the role to find</param>
     /// <returns>The role with a matching name, or null</returns>
-    private DiscordRole? GetRoleOrDefault(string roleName)
+    private DiscordRole? GetRoleOrDefault(string roleName, bool recordMissingRole)
     {
         DiscordRole? role = Roles.Values.FirstOrDefault(r => r.Name == roleName);
         if (role is null)
         {
             logger.LogWarning("Could not find role with name: {}", roleName);
             messageLogger.LogWarning("Could not find role with name: {}", roleName);
+            if (recordMissingRole)
+            {
+                Activity.Record(
+                    ActivityLog.MissingRole,
+                    $"Discord role not found: {roleName}",
+                    "The role was skipped during sync."
+                );
+            }
         }
 
         return role;

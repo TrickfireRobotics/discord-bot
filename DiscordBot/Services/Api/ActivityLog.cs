@@ -29,6 +29,7 @@ public class ActivityLog : IAutoRegisteredService
     public const string RolesSynced = "roles_synced";
     public const string InactiveNotice = "inactive_notice";
     public const string FeedbackReceived = "feedback_received";
+    public const string MissingRole = "missing_role";
     public const string Error = "error";
 
     private readonly List<ActivityEntry> _entries = [];

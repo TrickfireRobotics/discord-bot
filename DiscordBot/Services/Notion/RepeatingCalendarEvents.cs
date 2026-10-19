@@ -78,6 +78,10 @@ public class RepeatingCalendarEvents(
                 // No cancellation token so all events are properly made
                 await CreateRepeatedMeeting(new RepeatedMeeting(options.Value, page));
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Repeating Calendar Events main loop exception:");
