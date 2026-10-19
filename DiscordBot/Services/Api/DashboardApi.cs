@@ -92,6 +92,15 @@ public class DashboardApi(
                     Since = entry.time,
                 })
                 .ToList(),
+            MissingRoles = activity
+                .Recent(500)
+                .Where(entry => entry.Kind == ActivityLog.MissingRole)
+                .Select(entry => entry.Summary.Replace("Discord role not found: ", ""))
+                .Distinct()
+                .Where(roleName =>
+                    guild is null || !guild.Roles.Values.Any(role => role.Name == roleName)
+                )
+                .ToList(),
             Health = new
             {
                 activity.LastNotionWebhookAt,
