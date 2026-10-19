@@ -1,0 +1,7 @@
+.git
+**/bin
+**/obj
+secrets.txt
+data
+docs
+.devcontainer

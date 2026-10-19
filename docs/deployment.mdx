@@ -1,0 +1,70 @@
+---
+title: Deployment
+description: How the bot gets built, deployed, and kept running on self-hosted infrastructure.
+---
+
+The bot runs self-hosted on a TrickFire-owned Debian box via Docker Compose, deployed by a
+self-hosted GitHub Actions runner that lives on that same box.
+
+## How a deploy happens
+
+<Steps>
+    <Step>A push to `main` triggers `.github/workflows/deploy.yml`.</Step>
+    <Step>
+        A `format-check` job runs on a GitHub-hosted runner: builds the solution and runs
+        `dotnet csharpier check .`. A deploy never goes out with unformatted or non-building code.
+    </Step>
+    <Step>
+        The `deploy` job runs on the self-hosted runner. It writes `BOT_TOKEN` and
+        `NOTION_SECRET` (from GitHub Actions secrets) to `/home/trickfire/discord-bot/secrets.txt`, then runs
+        `docker compose -f docker/docker-compose.yml up -d --build`.
+    </Step>
+</Steps>
+
+Because the runner lives on the same box the bot runs on, there's no registry push and no SSH
+step — the image is built and started in place.
+
+<Callout type="info" title="Why secrets and state live outside the checkout">
+    `actions/checkout` cleans untracked files from the working directory by default. Persistent
+    bot state and secrets live at `/home/trickfire/discord-bot/data` and `/home/trickfire/discord-bot/secrets.txt` —
+    outside the git checkout entirely — specifically so a deploy never wipes them.
+</Callout>
+
+## docker/docker-compose.yml
+
+Docker files live under `docker/` to keep the repo root clean. The build context still points
+at the repo root (`context: ..`) so `COPY . .` in the Dockerfile sees the actual source.
+
+```yaml title="docker/docker-compose.yml"
+services:
+  bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    mem_limit: 512m
+    volumes:
+      - /home/trickfire/discord-bot/data:/data
+      - /home/trickfire/discord-bot/secrets.txt:/DiscordBot/secrets.txt:ro
+```
+
+- `restart: unless-stopped` — the container comes back automatically after a crash or host reboot.
+- `mem_limit: 512m` — caps container memory. If the process grows unbounded, Docker kills and
+  restarts it rather than it taking down other things on the box.
+- The `/data` volume is where `BotStateOptions.FileLocation` persists bot state between restarts
+  (see [Architecture](./architecture.mdx#configuration-reference)).
+- `secrets.txt` is bind-mounted read-only rather than baked into the image at build time, so the
+  token never ends up sitting in plaintext inside an image layer.
+
+<Callout type="warning" title="One-time host setup">
+    `/home/trickfire/discord-bot/data` needs to exist before the first deploy —
+    `mkdir -p /home/trickfire/discord-bot/data`. Lives under the runner's own home directory
+    (same convention as the dashboard/docs runners), so no root access is needed.
+</Callout>
+
+## Local vs. production
+
+Locally (see [Getting Started](./getting-started.mdx)), `secrets.txt`/`config.json` sit directly
+in the build output directory and you run the bot with `dotnet run`. In production, the same two
+files are supplied via the bind mounts above instead — the application code doesn't know or care
+which.

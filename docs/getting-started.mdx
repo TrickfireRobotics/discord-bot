@@ -1,0 +1,74 @@
+---
+title: Getting Started
+description: Set up a local development environment for the bot.
+slug: /
+---
+
+This is TrickFire's Discord bot — it tracks when members check in and out of the lab, syncs
+roles and attendance from Notion, and handles a few other member-facing Discord flows. It's
+built in C# on [DSharpPlus](https://dsharpplus.github.io/) and targets .NET 9.
+
+<Callout type="info" title="Just want to know what it does?">
+    This page is for setting up a dev environment. If you're wondering what the bot actually does
+    day-to-day rather than how to build it, see [What This Bot Does](./what-it-does.mdx) instead.
+</Callout>
+
+## Prerequisites
+
+You'll need a Discord bot token and a Notion integration secret for the bot to actually connect
+to anything — ask in the officers' channel if you don't have test credentials yet.
+
+## Setting up your environment
+
+<Tabs items={["Devcontainer (recommended)", "Local install"]}>
+    <Tab value="Devcontainer (recommended)">
+        The repo ships a devcontainer with the .NET SDK, C# Dev Kit, and CSharpier
+        pre-installed, so there's nothing to set up locally.
+
+        <Steps>
+            <Step>Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension in VS Code.</Step>
+            <Step>Open the repo folder in VS Code.</Step>
+            <Step>Run **Dev Containers: Reopen in Container** from the command palette.</Step>
+        </Steps>
+    </Tab>
+    <Tab value="Local install">
+        <Steps>
+            <Step>Install the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).</Step>
+            <Step>Open `DiscordBot.sln` in your IDE of choice, or work from the CLI with `dotnet build`.</Step>
+        </Steps>
+    </Tab>
+</Tabs>
+
+## Secrets and config
+
+The bot reads two files from its working directory at startup: `secrets.txt` and `config.json`.
+
+<Steps>
+    <Step>
+        Create `DiscordBot/secrets.txt` with the Discord bot token on the first line and the
+        Notion integration secret on the second:
+
+        ```text title="DiscordBot/secrets.txt"
+        <discord-bot-token>
+        <notion-secret>
+        ```
+    </Step>
+    <Step>
+        Fill in `DiscordBot/config.json` with the options each service needs — see
+        [Architecture](./architecture.mdx#configuration-reference) for the full field reference.
+    </Step>
+</Steps>
+
+<Callout type="warning" title="Don't commit secrets.txt">
+    `secrets.txt` is gitignored already, but double-check before committing if your editor ever
+    stages it manually — it holds live credentials.
+</Callout>
+
+## Running
+
+```bash title="Terminal"
+dotnet run --project DiscordBot
+```
+
+Formatting is enforced via [CSharpier](https://csharpier.com) — run `dotnet csharpier format .`
+before committing, or just let format-on-save in the devcontainer handle it.

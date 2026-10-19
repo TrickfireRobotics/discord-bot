@@ -1,0 +1,44 @@
+---
+title: What This Bot Does
+description: A plain-language explanation of what the bot does, when, and where — for anyone wondering "will this..."
+---
+
+This page is for officers, leads, or anyone who isn't going to touch the code but wants to know
+what the bot actually does day-to-day. No code, no technical setup — just what happens, when,
+and where you'd see it.
+
+## What it does on its own
+
+| When this happens | The bot does this | You'd see it in |
+| --- | --- | --- |
+| Someone joins the Discord server | Posts a welcome message mentioning them, with links to Notion, Schej, and team info | The server's welcome channel |
+| A member's info changes in Notion (position, team, active status) | Updates their Discord roles to match, usually within seconds | Their roles on Discord |
+| A member is marked inactive in Notion | Removes their team roles, applies an "Inactive" role, and sends them a DM explaining why | A DM to that member, and their role tag everywhere else |
+| Someone clicks "Check In or Out" in the shop channel | Adds or removes them from a live list of who's currently in the shop, and logs the time | The shop check-in channel, and the attendance records in Notion |
+| Someone submits the feedback form | Forwards the message to a private officers-only channel | The officers' feedback channel — nowhere else |
+| A recurring meeting in Notion hits its next occurrence | Creates the next instance on the calendar automatically | The Notion calendar |
+
+## What officers/leads can trigger manually
+
+A handful of slash commands exist for setup and manual overrides: pointing the bot at which
+channel is the check-in channel, feedback channel, or logging channel; forcing a full role
+resync; checking everyone out at once (e.g. end of day); and a basic health check (`/ping`).
+These require Discord permissions to run — regular members can't trigger them.
+
+## What it does NOT do
+
+<Callout type="info" title="Scope">
+    If you're wondering whether the bot does something not listed above, the honest answer is
+    probably not — it's a small, purpose-built bot, not a general moderation or automation tool.
+</Callout>
+
+- It does not read, log, or moderate regular chat messages. The only "logging" it does is
+  mirroring its own internal errors to a private channel for whoever maintains it — that's about
+  the bot's health, not about what members say.
+- Feedback submissions are genuinely anonymous — the bot doesn't attach who submitted it when
+  forwarding to officers.
+- It doesn't manage roles unrelated to team membership/technical lead/inactive status — anything
+  else assigned manually on Discord is left alone.
+- It doesn't post anything publicly on someone's behalf without an explicit action from them
+  (joining, checking in, submitting feedback) — there's no autonomous posting beyond the fixed
+  messages above.
