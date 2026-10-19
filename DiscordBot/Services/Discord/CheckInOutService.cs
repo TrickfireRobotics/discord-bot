@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using DiscordBot.Services.Api;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -29,13 +30,15 @@ public class CheckInOutService
 
     private BotState BotState { get; }
     private DiscordService Discord { get; }
+    private ActivityLog Activity { get; }
 
     private bool _needToUpdateEmbed = true;
 
-    public CheckInOutService(BotState botState, DiscordService discord)
+    public CheckInOutService(BotState botState, DiscordService discord, ActivityLog activity)
     {
         BotState = botState;
         Discord = discord;
+        Activity = activity;
 
         // Subscribe to updates of member list
         object lock_ = new();
@@ -254,10 +257,12 @@ public class CheckInOutService
         DiscordFollowupMessageBuilder builder = new() { IsEphemeral = true };
         if (memberIndex == -1)
         {
+            Activity.Record(ActivityLog.CheckIn, $"{member.DisplayName} checked in");
             builder.WithContent("Checked in. " + GetCheckInMessage());
         }
         else
         {
+            Activity.Record(ActivityLog.CheckOut, $"{member.DisplayName} checked out");
             builder.WithContent($"Checked out. " + GetCheckOutMessage());
         }
         await interaction.CreateFollowupMessageAsync(builder);

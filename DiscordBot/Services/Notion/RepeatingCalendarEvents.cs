@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using DiscordBot.Services.Api;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,8 +11,9 @@ public class RepeatingCalendarEvents(
     ILogger<RepeatingCalendarEvents> logger,
     IOptions<RepeatingCalendarEventsOptions> options,
     WebhookListener listener,
-    INotionClient notionClient
-) : NotionWebhookService<Page>(logger, listener), IAutoRegisteredService
+    INotionClient notionClient,
+    ActivityLog activity
+) : NotionWebhookService<Page>(logger, listener, activity), IAutoRegisteredService
 {
     public override string WebhookEndpoint => "/repeating-event";
 

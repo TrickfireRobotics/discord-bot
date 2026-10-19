@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using DiscordBot.Services.Api;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Exceptions;
@@ -12,7 +13,8 @@ namespace DiscordBot.Services.Discord;
 public class FeedbackService(
     IOptions<FeedbackServiceOptions> options,
     BotState botState,
-    DiscordService discord
+    DiscordService discord,
+    ActivityLog activity
 )
     : IHostedService,
         IAutoRegisteredService,
@@ -91,6 +93,9 @@ public class FeedbackService(
                     ])
                 )
         );
+        // Deliberately records no author and no content: feedback is anonymous.
+        activity.Record(ActivityLog.FeedbackReceived, "Anonymous feedback submitted");
+
         await e.Interaction.CreateFollowupMessageAsync(modalConfirm);
     }
 

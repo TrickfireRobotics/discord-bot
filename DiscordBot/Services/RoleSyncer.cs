@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using DiscordBot.Services.Api;
 using DiscordBot.Services.Discord;
 using DiscordBot.Services.Notion;
 using DSharpPlus.Entities;
@@ -15,8 +16,9 @@ public class RoleSyncer(
     INotionClient notionClient,
     WebhookListener listener,
     DiscordService discordService,
+    ActivityLog activity,
     IOptions<RoleSyncerOptions> options
-) : NotionWebhookService<RoleSyncer.MemberPage>(logger, listener), IAutoRegisteredService
+) : NotionWebhookService<RoleSyncer.MemberPage>(logger, listener, activity), IAutoRegisteredService
 {
     public override string WebhookEndpoint => "/members";
     private IReadOnlyDictionary<ulong, DiscordRole> Roles => discordService.MainGuild.Roles;
@@ -92,6 +94,7 @@ public class RoleSyncer(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error in RoleSyncer main loop: ");
+                Activity.Record(ActivityLog.Error, "Role sync failed", ex.Message);
             }
         }
     }
@@ -210,6 +213,11 @@ public class RoleSyncer(
         if (!dryRun && !newRoles.SetEquals(member.Roles))
         {
             await member.ModifyAsync(model => model.Roles = newRoles.ToList());
+            Activity.Record(
+                ActivityLog.RolesSynced,
+                $"Updated roles for {member.DisplayName}",
+                logString
+            );
             await Task.Delay(1000);
         }
 
@@ -219,6 +227,10 @@ public class RoleSyncer(
             try
             {
                 await member.SendMessageAsync(options.Value.InactiveMessage);
+                Activity.Record(
+                    ActivityLog.InactiveNotice,
+                    $"Told {member.DisplayName} they were marked inactive"
+                );
                 logger.LogDebug(
                     "Member sent inactive message: `{}` (`{}`)",
                     member.Username,

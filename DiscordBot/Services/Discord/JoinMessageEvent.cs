@@ -1,4 +1,5 @@
-﻿using DSharpPlus;
+﻿using DiscordBot.Services.Api;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Microsoft.Extensions.Hosting;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Services.Discord;
 
-public class JoinMessageEvent(IOptions<JoinMessageEventOptions> options)
+public class JoinMessageEvent(IOptions<JoinMessageEventOptions> options, ActivityLog activity)
     : IEventHandler<GuildMemberAddedEventArgs>,
         IAutoRegisteredService
 {
@@ -31,6 +32,7 @@ public class JoinMessageEvent(IOptions<JoinMessageEventOptions> options)
         {
             string content = string.Format(options.Value.JoinMessage, eventArgs.Member.Mention);
             DiscordMessage message = await _welcomeChannel.SendMessageAsync(content);
+            activity.Record(ActivityLog.MemberJoined, $"Welcomed {eventArgs.Member.DisplayName}");
             await Task.Delay(1000);
             await message.ModifyEmbedSuppressionAsync(true);
         }

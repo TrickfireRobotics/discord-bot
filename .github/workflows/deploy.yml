@@ -31,7 +31,7 @@ jobs:
       - name: Write secrets
         run: |
           mkdir -p /home/trickfire/discord-bot/data
-          printf '%s\n%s\n' "${{ secrets.BOT_TOKEN }}" "${{ secrets.NOTION_SECRET }}" > /home/trickfire/discord-bot/secrets.txt
+          printf '%s\n%s\n%s\n' "${{ secrets.BOT_TOKEN }}" "${{ secrets.NOTION_SECRET }}" "${{ secrets.DASHBOARD_TOKEN }}" > /home/trickfire/discord-bot/secrets.txt
           chmod 600 /home/trickfire/discord-bot/secrets.txt
 
       - name: Build and restart
