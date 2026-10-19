@@ -118,6 +118,21 @@ public class ActivityLog : IAutoRegisteredService
         }
     }
 
+    public void ClearLastRoleSyncError()
+    {
+        lock (_entries)
+        {
+            if (LastError != "Role sync failed")
+            {
+                return;
+            }
+
+            LastErrorAt = null;
+            LastError = null;
+            Save();
+        }
+    }
+
     /// <summary>
     /// The most recent entries, newest first.
     /// </summary>

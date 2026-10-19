@@ -90,6 +90,7 @@ public class RoleSyncer(
                     page: await PageQueue.Reader.ReadAsync(stoppingToken),
                     dryRun: false
                 );
+                Activity.ClearLastRoleSyncError();
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
