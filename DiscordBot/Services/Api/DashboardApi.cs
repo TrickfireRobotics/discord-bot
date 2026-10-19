@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace DiscordBot.Services.Api;
 
@@ -30,6 +31,11 @@ public class DashboardApi(
     private static readonly DateTimeOffset StartedAt = Process
         .GetCurrentProcess()
         .StartTime.ToUniversalTime();
+
+    private static readonly JsonSerializerSettings JsonSettings = new()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+    };
 
     private string? Token => configuration["DASHBOARD_TOKEN"];
 
@@ -100,7 +106,7 @@ public class DashboardApi(
         return new RouteResponse(
             HttpStatusCode.OK,
             "application/json",
-            JsonConvert.SerializeObject(payload)
+            JsonConvert.SerializeObject(payload, JsonSettings)
         );
     }
 
