@@ -2,6 +2,9 @@
     "name": "discord-bot",
     "image": "mcr.microsoft.com/devcontainers/dotnet:9.0",
     "forwardPorts": [8080],
+    "mounts": [
+        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+    ],
     "customizations": {
         "vscode": {
             "extensions": [
