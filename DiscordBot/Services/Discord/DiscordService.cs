@@ -84,7 +84,8 @@ public class DiscordService(DiscordClient client, IOptions<DiscordServiceOptions
                 events.AddEventHandlers(eventHandlers);
             })
             .AddInjectableHostedService<DiscordService>()
-            .ConfigureTypeSection<DiscordServiceOptions>(builder.Configuration);
+            .ConfigureTypeSection<DiscordServiceOptions>(builder.Configuration)
+            .ConfigureTypeSection<DashboardCommandsOptions>(builder.Configuration);
     }
 
     public async Task HandleEventAsync(DiscordClient sender, SessionCreatedEventArgs eventArgs)

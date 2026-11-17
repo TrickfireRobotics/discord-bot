@@ -2,6 +2,8 @@
 using DiscordBot.Services;
 using DiscordBot.Services.Api;
 using DSharpPlus;
+using DSharpPlus.Http.AspNetCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,7 +19,7 @@ internal class Program
         string baseDir = args.Length > 0 ? args[0] : "";
         string[] secrets = File.ReadAllLines(Path.Join(baseDir, "secrets.txt"));
 
-        IHost host;
+        WebApplication host;
         try
         {
             host = CreateHost(baseDir, secrets);
@@ -57,7 +59,7 @@ internal class Program
             {
                 try
                 {
-                    host.Dispose();
+                    await host.DisposeAsync();
                 }
                 catch (Exception ex)
                 {
@@ -67,16 +69,21 @@ internal class Program
         }
     }
 
-    private static IHost CreateHost(string baseDir, string[] secrets)
+    private static WebApplication CreateHost(string baseDir, string[] secrets)
     {
-        HostApplicationBuilder builder = Host.CreateApplicationBuilder();
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+
+        // Interactions only - the dashboard status API and Notion webhooks
+        // keep using WebhookListener on its own port.
+        builder.WebHost.UseUrls("http://*:8082");
 
         // Add config.json
         builder.Configuration.AddJsonFile(Path.Join(baseDir, "config.json"));
         builder.Configuration["BOT_TOKEN"] = secrets[0];
         builder.Configuration["NOTION_SECRET"] = secrets[1];
 
-        // Optional third line: lets the dashboard read the bot's status API.
+        // Optional third line: lets the dashboard read the bot's status API,
+        // and authenticates the health monitor's maintenance-window requests.
         if (secrets.Length > 2 && !string.IsNullOrWhiteSpace(secrets[2]))
         {
             builder.Configuration["DASHBOARD_TOKEN"] = secrets[2];
@@ -124,6 +131,8 @@ internal class Program
                 opt.IncludeScopes = true;
             });
 
-        return builder.Build();
+        WebApplication app = builder.Build();
+        app.AddDiscordHttpInteractions("/interactions");
+        return app;
     }
 }

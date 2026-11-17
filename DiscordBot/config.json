@@ -52,5 +52,11 @@
     "OriginalEventPropertyName": "Original Repeating Event",
     "EventTimePropertyName": "Event time",
     "TimeZone": "America/Los_Angeles"
+  },
+  "DashboardCommandsOptions": {
+    "AlertChannelId": 1221527423724818482,
+    "PingRoleId": 1572069686278098986,
+    "HealthUrl": "https://dashboard.trickfirerobotics.com/api/health",
+    "MonitorUrl": "https://dashboard-monitor.trickfirerobotics.workers.dev"
   }
 }

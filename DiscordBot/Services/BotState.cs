@@ -52,6 +52,12 @@ public class BotState : IAutoRegisteredService
     /// </summary>
     public ulong ClubInfoMessageId { get; set; } = 0;
 
+    /// <summary>
+    /// When set and in the future, the health monitor suppresses downtime
+    /// alerts until this time.
+    /// </summary>
+    public DateTimeOffset? MaintenanceUntil { get; set; }
+
     private BotStateOptions Options { get; }
 
     public BotState(IOptions<BotStateOptions> options)
