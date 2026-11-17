@@ -2,8 +2,6 @@
 using DiscordBot.Services;
 using DiscordBot.Services.Api;
 using DSharpPlus;
-using DSharpPlus.Http.AspNetCore;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,7 +17,7 @@ internal class Program
         string baseDir = args.Length > 0 ? args[0] : "";
         string[] secrets = File.ReadAllLines(Path.Join(baseDir, "secrets.txt"));
 
-        WebApplication host;
+        IHost host;
         try
         {
             host = CreateHost(baseDir, secrets);
@@ -59,7 +57,7 @@ internal class Program
             {
                 try
                 {
-                    await host.DisposeAsync();
+                    host.Dispose();
                 }
                 catch (Exception ex)
                 {
@@ -69,13 +67,9 @@ internal class Program
         }
     }
 
-    private static WebApplication CreateHost(string baseDir, string[] secrets)
+    private static IHost CreateHost(string baseDir, string[] secrets)
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
-
-        // Interactions only - the dashboard status API and Notion webhooks
-        // keep using WebhookListener on its own port.
-        builder.WebHost.UseUrls("http://*:8082");
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder();
 
         // Add config.json
         builder.Configuration.AddJsonFile(Path.Join(baseDir, "config.json"));
@@ -131,8 +125,6 @@ internal class Program
                 opt.IncludeScopes = true;
             });
 
-        WebApplication app = builder.Build();
-        app.AddDiscordHttpInteractions("/interactions");
-        return app;
+        return builder.Build();
     }
 }
